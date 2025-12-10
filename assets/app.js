@@ -1,6 +1,17 @@
 const API = "https://api.vaktija.ba/vaktija/v1";
 
-const labels = ["Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"];
+const labels = {
+  en: ["Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"],
+  bs: ["Sabah u džamiji", "Izlazak sunca", "Podne", "Ikindija", "Akšam", "Jacija"],
+  ar: ["الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء"]
+};
+
+const hijriMonths = [
+  "muharram", "safar", "rabiʿ al-awwal", "rabiʿ al-thani", 
+  "jumada al-awwal", "jumada al-thani", "redžeb", "šaʿban",
+  "ramadan", "šavval", "dhu al-qadah", "dhu al-hijjah"
+];
+
 const MOSQUES = [
   { name: "Masjid Al-Hikmah", city: "Jakarta" },
   { name: "Masjid Nurul Iman", city: "Bandung" },
@@ -8,7 +19,7 @@ const MOSQUES = [
 ];
 
 function saveMosqueIndex(i) { localStorage.setItem("mosqueIndex", String(i)); }
-function loadMosqueIndex() { const v = localStorage.getItem("mosqueIndex"); return v? Number(v): 0; }
+function loadMosqueIndex() { const v = localStorage.getItem("mosqueIndex"); return v ? Number(v) : 0; }
 
 function isoDateInTZ(date, tz) {
   return new Intl.DateTimeFormat("en-GB", {
@@ -25,6 +36,21 @@ function fmtTime(date) {
     minute: "2-digit",
     hourCycle: "h23",
   }).format(date);
+}
+
+function fmtTimeWithSeconds(date, tz) {
+  const formatted = new Intl.DateTimeFormat("en-GB", {
+    timeZone: tz,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(date);
+  
+  const h = formatted.find(p => p.type === "hour").value;
+  const m = formatted.find(p => p.type === "minute").value;
+  const s = formatted.find(p => p.type === "second").value;
+  return `${h}:${m}:${s}`;
 }
 
 function islamicToJD(y, m, d) {
@@ -51,21 +77,33 @@ function gregorianToJD(y, m, d) {
 function toHijri(date) {
   const jd = gregorianToJD(date.getFullYear(), date.getMonth() + 1, date.getDate());
   const { year, month, day } = jdToIslamic(jd);
-  const months = [
-    "Muharram",
-    "Safar",
-    "Rabiʿ al-awwal",
-    "Rabiʿ al-thani",
-    "Jumada al-awwal",
-    "Jumada al-thani",
-    "Rajab",
-    "Shaʿban",
-    "Ramadan",
-    "Shawwal",
-    "Dhu al-Qadah",
-    "Dhu al-Hijjah",
+  return {
+    dayYear: `${String(day).padStart(2, "0")}. ${year}`,
+    month: hijriMonths[month - 1]
+  };
+}
+
+function toGregorianDate(date, tz) {
+  const formatted = new Intl.DateTimeFormat("en-GB", {
+    timeZone: tz,
+    year: "numeric",
+    month: "numeric",
+    day: "2-digit"
+  }).formatToParts(date);
+  
+  const day = formatted.find(p => p.type === "day").value;
+  const year = formatted.find(p => p.type === "year").value;
+  const monthNum = parseInt(formatted.find(p => p.type === "month").value);
+  
+  const monthNames = [
+    "januar", "februar", "mart", "april", "maj", "jun",
+    "jul", "avgust", "septembar", "oktobar", "novembar", "decembar"
   ];
-  return `${String(day).padStart(2, "0")} ${months[month - 1]} ${year} AH`;
+  const month = monthNames[monthNum - 1];
+  return {
+    dayYear: `${day}. ${year}`,
+    month: month
+  };
 }
 
 function parseHHMM(hhmm, tz, dayOffset = 0) {
@@ -90,14 +128,6 @@ function currentTimeTZ(tz) {
   return new Date();
 }
 
-function countdownTo(nextDate, now) {
-  const diff = Math.max(nextDate.getTime() - now.getTime(), 0);
-  const h = String(Math.floor(diff / 3600000)).padStart(2, "0");
-  const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, "0");
-  const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, "0");
-  return `${h}:${m}:${s}`;
-}
-
 function getLocationId() {
   const saved = localStorage.getItem("locId");
   return saved ? Number(saved) : 77;
@@ -118,24 +148,51 @@ function renderGrid(times, activeIdx) {
   const grid = document.getElementById("grid");
   grid.innerHTML = "";
   times.forEach((t, i) => {
-    const div = document.createElement("div");
-    div.className = `flex flex-col items-center justify-between min-h-[140px] rounded-2xl p-4 lg:p-6 transition-transform duration-300 ${activeIdx===i?"bg-emerald-800/50 ring-2 ring-emerald-500 scale-[1.03]":"bg-neutral-900/80 ring-1 ring-neutral-700"}`;
-    div.innerHTML = `<div class="text-base lg:text-lg ${activeIdx===i?"text-emerald-200":"text-neutral-300"}">${labels[i]}</div><div class="text-4xl lg:text-5xl font-semibold ${activeIdx===i?"text-emerald-100":"text-white"}">${t}</div>`;
-    grid.appendChild(div);
+    const isActive = activeIdx === i;
+    const row = document.createElement("div");
+    row.className = `flex flex-row items-center justify-between py-3 sm:py-4 border-b border-neutral-300/50 last:border-b-0 ${
+      isActive ? "bg-emerald-50/50" : ""
+    }`;
+    
+    row.innerHTML = `
+      <div class="flex-1 text-left">
+        <div class="text-sm sm:text-base font-medium ${isActive ? "text-emerald-700" : "text-neutral-900"}">
+          ${labels.bs[i]}
+        </div>
+      </div>
+      <div class="flex-1 text-center px-2 sm:px-4">
+        <div class="text-2xl sm:text-3xl lg:text-4xl font-bold ${isActive ? "text-emerald-600" : "text-neutral-900"}">
+          ${t}
+        </div>
+      </div>
+      <div class="flex-1 text-right">
+        <div class="text-sm sm:text-base font-medium ${isActive ? "text-emerald-700" : "text-neutral-700"}">
+          ${labels.en[i]}
+        </div>
+        <div class="text-xs sm:text-sm ${isActive ? "text-emerald-600" : "text-neutral-500"} mt-0.5">
+          ${labels.ar[i]}
+        </div>
+      </div>
+    `;
+    grid.appendChild(row);
   });
 }
 
 async function main() {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  document.getElementById("tz").textContent = tz;
   document.getElementById("year").textContent = String(new Date().getFullYear());
-  document.getElementById("loc").value = String(getLocationId());
-  // Mosque select
-  const select = document.getElementById("mosque");
-  select.innerHTML = MOSQUES.map((m, i) => `<option value="${i}">${m.name} — ${m.city}</option>`).join("");
-  select.value = String(loadMosqueIndex());
+  
+  // Organization names
+  const orgNames = document.getElementById("org-names");
+  orgNames.innerHTML = `
+    <div class="font-semibold">ISLAMSKA ZAJEDNICA U BOSNI I HERCEGOVINI</div>
+    <div class="font-semibold">ISLAMSKA ZAJEDNICA BOŠNJAKA SJEVERNE AMERIKE</div>
+  `;
+  
+  // Mosque name
   const label = document.getElementById("mosque-name");
-  label.textContent = `${MOSQUES[Number(select.value)].name} • ${MOSQUES[Number(select.value)].city}`;
+  const currentMosque = MOSQUES[loadMosqueIndex()];
+  label.textContent = `${currentMosque.name} - džemat "${currentMosque.name}"`;
 
   async function load() {
     const locId = getLocationId();
@@ -146,76 +203,56 @@ async function main() {
       let idx = -1;
       const now = currentTimeTZ(tz);
       for (let i = schedule.length - 1; i >= 0; i--) if (now >= schedule[i]) { idx = i; break; }
-      let nextIdx = idx === -1 ? 0 : idx + 1;
-      let target;
-      if (nextIdx >= schedule.length) {
-        target = parseHHMM(prepared[0], tz, 1);
-        nextIdx = 0;
-      } else {
-        target = schedule[nextIdx];
-      }
       renderGrid(prepared, idx);
-      document.getElementById("next").textContent = `Next: ${labels[nextIdx]} at ${fmtTime(target)}`;
-      // cache next target for countdown
-      window.__nextTarget = target;
       document.getElementById("status").textContent = data.lokacija ? `Location: ${data.lokacija}` : "";
+      // cache schedule for countdown calculation
+      window.__schedule = schedule;
+      window.__prepared = prepared;
     } catch (e) {
       renderGrid(["--:--","--:--","--:--","--:--","--:--","--:--"], -1);
       document.getElementById("status").textContent = "Unable to load prayer times";
-      window.__nextTarget = null;
+      window.__schedule = null;
+      window.__prepared = null;
     }
   }
 
   await load();
 
-  setInterval(() => {
+  // Initialize clock and dates immediately
+  function updateClockAndDates() {
     const now = currentTimeTZ(tz);
-    document.getElementById("clock").textContent = fmtTime(now);
-    document.getElementById("date").textContent = new Intl.DateTimeFormat("en-GB", { timeZone: tz, year: "numeric", month: "long", day: "2-digit", weekday: "long" }).format(now);
-    document.getElementById("hijri").textContent = toHijri(now);
-    const target = window.__nextTarget;
-    document.getElementById("countdown").textContent = target ? countdownTo(target, now) : "--:--:--";
-    if (target && now >= target) {
-      // refresh schedule when we pass the target
-      load();
+    document.getElementById("clock").textContent = fmtTimeWithSeconds(now, tz);
+    const gregorian = toGregorianDate(now, tz);
+    document.getElementById("date-day-year").textContent = gregorian.dayYear;
+    document.getElementById("date-month").textContent = gregorian.month;
+    const hijri = toHijri(now);
+    document.getElementById("hijri-day-year").textContent = hijri.dayYear;
+    document.getElementById("hijri-month").textContent = hijri.month;
+    return now;
+  }
+  
+  updateClockAndDates();
+
+  setInterval(() => {
+    const now = updateClockAndDates();
+    
+    // Update active prayer based on current time
+    if (window.__schedule) {
+      let idx = -1;
+      for (let i = window.__schedule.length - 1; i >= 0; i--) {
+        if (now >= window.__schedule[i]) { 
+          idx = i; 
+          break; 
+        }
+      }
+      if (idx !== window.__lastIdx) {
+        window.__lastIdx = idx;
+        renderGrid(window.__prepared, idx);
+      }
     }
   }, 1000);
 
   setInterval(load, 300000);
-
-  document.getElementById("apply").addEventListener("click", () => {
-    const v = Number(document.getElementById("loc").value);
-    if (!Number.isFinite(v) || v <= 0) return;
-    setLocationId(v);
-    load();
-  });
-
-  select.addEventListener("change", () => {
-    const i = Number(select.value);
-    saveMosqueIndex(i);
-    label.textContent = `${MOSQUES[i].name} • ${MOSQUES[i].city}`;
-  });
-
-  function applyOrientation() {
-    const isLandscape = window.matchMedia("(orientation: landscape)").matches;
-    const panels = document.getElementById("top-panels");
-    if (isLandscape) {
-      panels.className = "grid grid-cols-3 gap-6 items-stretch";
-      document.getElementById("clock").className = "text-7xl font-semibold tracking-tight mt-2";
-      document.getElementById("countdown").className = "text-7xl font-bold mt-2 text-emerald-300 tracking-wider";
-      document.getElementById("date").className = "text-3xl font-medium mt-2 text-neutral-200";
-      document.getElementById("hijri").className = "text-2xl font-medium mt-2 text-emerald-300";
-    } else {
-      panels.className = "grid grid-cols-1 gap-6 items-stretch";
-      document.getElementById("clock").className = "text-6xl lg:text-7xl font-semibold tracking-tight mt-2";
-      document.getElementById("countdown").className = "text-6xl lg:text-7xl font-bold mt-2 text-emerald-300 tracking-wider";
-      document.getElementById("date").className = "text-2xl lg:text-3xl font-medium mt-2 text-neutral-200";
-      document.getElementById("hijri").className = "text-xl lg:text-2xl font-medium mt-2 text-emerald-300";
-    }
-  }
-
-  applyOrientation();
-  window.addEventListener("resize", applyOrientation);
 }
 
 main();
