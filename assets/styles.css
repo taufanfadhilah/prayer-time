@@ -1,2 +1,44 @@
 /* optional base overrides */
 html,body{height:100%}
+
+body {
+  background-image: url('./images/bg.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-color: transparent !important;
+}
+
+/* Make all neutral backgrounds transparent/opacity */
+.bg-neutral-950 {
+  background-color: rgba(10, 10, 10, 0.3) !important;
+}
+
+.bg-neutral-950\/60 {
+  background-color: rgba(10, 10, 10, 0.3) !important;
+}
+
+.bg-neutral-900\/70,
+.bg-neutral-900\/80 {
+  background-color: rgba(23, 23, 23, 0.4) !important;
+}
+
+.bg-neutral-800 {
+  background-color: rgba(38, 38, 38, 0.5) !important;
+}
+
+/* Override header background */
+header {
+  background-color: rgba(23, 23, 23, 0.4) !important;
+}
+
+/* Make article backgrounds more transparent */
+article {
+  background-color: rgba(23, 23, 23, 0.4) !important;
+}
+
+/* Make section backgrounds more transparent */
+section {
+  background-color: rgba(10, 10, 10, 0.3) !important;
+}
