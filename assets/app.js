@@ -150,26 +150,24 @@ function renderGrid(times, activeIdx) {
   times.forEach((t, i) => {
     const isActive = activeIdx === i;
     const row = document.createElement("div");
-    row.className = `flex flex-row items-center justify-between py-3 sm:py-4 border-b border-neutral-300/50 last:border-b-0 ${
-      isActive ? "bg-emerald-50/50" : ""
-    }`;
+    row.className = `flex flex-row items-center justify-between py-4 sm:py-5 border-b border-neutral-300/30 last:border-b-0`;
     
     row.innerHTML = `
       <div class="flex-1 text-left">
-        <div class="text-sm sm:text-base font-medium ${isActive ? "text-emerald-700" : "text-neutral-900"}">
+        <div class="text-base sm:text-lg font-semibold ${isActive ? "text-emerald-600" : "text-neutral-900"}">
           ${labels.bs[i]}
         </div>
       </div>
       <div class="flex-1 text-center px-2 sm:px-4">
-        <div class="text-2xl sm:text-3xl lg:text-4xl font-bold ${isActive ? "text-emerald-600" : "text-neutral-900"}">
+        <div class="text-3xl sm:text-4xl lg:text-5xl font-black ${isActive ? "text-emerald-600" : "text-neutral-900"}">
           ${t}
         </div>
       </div>
       <div class="flex-1 text-right">
-        <div class="text-sm sm:text-base font-medium ${isActive ? "text-emerald-700" : "text-neutral-700"}">
+        <div class="text-base sm:text-lg font-semibold ${isActive ? "text-emerald-600" : "text-neutral-800"}">
           ${labels.en[i]}
         </div>
-        <div class="text-xs sm:text-sm ${isActive ? "text-emerald-600" : "text-neutral-500"} mt-0.5">
+        <div class="text-xs sm:text-sm font-medium ${isActive ? "text-emerald-600" : "text-neutral-600"} mt-0.5">
           ${labels.ar[i]}
         </div>
       </div>
