@@ -7,61 +7,75 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="./assets/styles.css">
   </head>
-  <body class="min-h-screen bg-neutral-950 text-black">
-    <header class="bg-transparent backdrop-blur-sm">
-      <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4 lg:py-6">
-        <div class="flex items-center gap-3 sm:gap-4 lg:gap-6">
-          <div id="logo" class="flex-shrink-0"></div>
-          <div class="flex flex-col">
-            <div id="org-names" class="flex flex-col text-xs sm:text-sm lg:text-base"></div>
-            <div id="mosque-name" class="text-sm sm:text-base lg:text-xl font-semibold text-emerald-700 mt-0.5 sm:mt-1"></div>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- Clock and Dates Section -->
-      <section class="mb-10">
-        <div class="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12">
-          <!-- Large Clock -->
-          <div class="text-center lg:text-left">
-            <div id="clock" class="text-7xl sm:text-8xl lg:text-9xl font-bold tracking-tight text-neutral-900">--:--:--</div>
+  <body class="min-h-screen bg-dark-background">
+    <div class="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <!-- Main Card Container -->
+      <div class="prayer-card-container max-w-2xl w-full">
+        <!-- Header Section -->
+        <header class="mb-6 sm:mb-8">
+          <div class="flex items-center gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6">
+            <div id="logo" class="flex-shrink-0"></div>
+            <div class="flex flex-col">
+              <div id="org-names" class="flex flex-col text-xs sm:text-sm lg:text-base text-dark-text"></div>
+              <div id="mosque-name" class="text-xs sm:text-sm lg:text-base font-normal text-dark-text mt-1"></div>
+            </div>
           </div>
           
-          <!-- Date Boxes -->
-          <div class="w-full flex flex-row gap-3 sm:gap-6 lg:gap-8">
-            <div class="rounded-xl bg-transparent backdrop-blur-sm ring-1 ring-neutral-300/50 px-4 py-4 sm:px-8 sm:py-6 lg:px-12 lg:py-8 text-center flex-1">
-              <div class="text-sm sm:text-base lg:text-lg text-neutral-700 mb-2 sm:mb-3">Gregorian</div>
-              <div id="date-day-year" class="text-3xl sm:text-5xl lg:text-6xl font-bold text-neutral-900 break-words"></div>
-              <div id="date-month" class="text-lg sm:text-2xl lg:text-3xl font-semibold text-neutral-800 mt-2"></div>
+          <!-- Current Time Display -->
+          <div class="rounded-lg border border-light-border bg-transparent px-6 py-4 sm:px-8 sm:py-6 text-center">
+            <div id="clock" class="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-dark-text">--:--:--</div>
+          </div>
+        </header>
+
+        <!-- Date Section -->
+        <section class="mb-6 sm:mb-8">
+          <div class="flex flex-row gap-4 sm:gap-6 justify-center">
+            <!-- Gregorian Date Box -->
+            <div class="rounded-lg border border-light-border bg-transparent px-6 py-5 sm:px-8 sm:py-6 lg:px-10 lg:py-8 text-center flex-1 max-w-xs">
+              <div class="mb-2">
+                <span id="date-day" class="text-5xl sm:text-6xl lg:text-7xl font-bold text-prayer-green"></span>
+                <span class="text-2xl sm:text-3xl lg:text-4xl font-bold text-prayer-green">.</span>
+                <span id="date-year" class="text-2xl sm:text-3xl lg:text-4xl font-bold text-prayer-green"></span>
+              </div>
+              <div id="date-month" class="text-2xl sm:text-3xl lg:text-4xl font-bold text-dark-text"></div>
             </div>
-            <div class="rounded-xl bg-transparent backdrop-blur-sm ring-1 ring-neutral-300/50 px-4 py-4 sm:px-8 sm:py-6 lg:px-12 lg:py-8 text-center flex-1">
-              <div class="text-sm sm:text-base lg:text-lg text-neutral-700 mb-2 sm:mb-3">Hijri</div>
-              <div id="hijri-day-year" class="text-3xl sm:text-5xl lg:text-6xl font-bold text-emerald-700 break-words"></div>
-              <div id="hijri-month" class="text-lg sm:text-2xl lg:text-3xl font-semibold text-emerald-700 mt-2"></div>
+            
+            <!-- Islamic Date Box -->
+            <div class="rounded-lg border border-light-border bg-transparent px-6 py-5 sm:px-8 sm:py-6 lg:px-10 lg:py-8 text-center flex-1 max-w-xs">
+              <div class="mb-2">
+                <span id="hijri-day" class="text-5xl sm:text-6xl lg:text-7xl font-bold text-islamic-date"></span>
+                <span class="text-2xl sm:text-3xl lg:text-4xl font-bold text-islamic-date">.</span>
+                <span id="hijri-year" class="text-2xl sm:text-3xl lg:text-4xl font-bold text-islamic-date"></span>
+              </div>
+              <div id="hijri-month" class="text-2xl sm:text-3xl lg:text-4xl font-bold text-islamic-date"></div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Prayer Times Banner and Grid -->
-      <section class="mt-10">
-        <div class="bg-emerald-600 text-white px-6 py-3 rounded-t-xl">
-          <div class="text-xl sm:text-2xl font-semibold text-center">VRIJEME NAMAZA | PRAYER TIMES</div>
-        </div>
-        <div class="bg-transparent backdrop-blur-sm ring-1 ring-neutral-300/50 rounded-b-xl p-4 sm:p-6">
-          <div id="grid" class="flex flex-col"></div>
-          <div id="status" class="mt-4 text-center text-sm text-neutral-600"></div>
-        </div>
-      </section>
-    </main>
+        <!-- Prayer Times Section -->
+        <section class="mb-6 sm:mb-8">
+          <div class="bg-transparent rounded-lg overflow-hidden border border-light-border">
+            <!-- Title Bar -->
+            <div class="bg-prayer-green text-white px-6 py-3 sm:py-4 rounded-t-lg">
+              <div class="text-lg sm:text-xl lg:text-2xl font-bold text-center uppercase">VRIJEME NAMAZA | PRAYER TIMES</div>
+            </div>
+            
+            <!-- Prayer List -->
+            <div class="bg-transparent">
+              <div id="grid" class="flex flex-col"></div>
+            </div>
+          </div>
+          <div id="status" class="mt-4 text-center text-sm text-dark-text opacity-70"></div>
+        </section>
 
-    <footer class="mt-16 border-t border-neutral-300/50">
-      <div class="max-w-7xl mx-auto px-4 py-6 text-neutral-600 text-center">
-        <p>© <span id="year"></span> Prayer Time Display</p>
+        <!-- Footer Section -->
+        <footer class="bg-prayer-green text-white px-6 py-5 sm:px-8 sm:py-6 lg:px-10 lg:py-8 rounded-lg">
+          <p class="text-sm sm:text-base text-center leading-relaxed">
+            Allah's Messenger ( ﷺ ) said, "By Him in Whose Hands my life is, none of you will have faith till he loves me more than his father and his children."
+          </p>
+        </footer>
       </div>
-    </footer>
+    </div>
 
     <script type="module" src="./assets/app.js"></script>
   </body>

@@ -78,7 +78,8 @@ function toHijri(date) {
   const jd = gregorianToJD(date.getFullYear(), date.getMonth() + 1, date.getDate());
   const { year, month, day } = jdToIslamic(jd);
   return {
-    dayYear: `${String(day).padStart(2, "0")}. ${year}`,
+    day: String(day).padStart(2, "0"),
+    year: String(year),
     month: hijriMonths[month - 1]
   };
 }
@@ -101,7 +102,8 @@ function toGregorianDate(date, tz) {
   ];
   const month = monthNames[monthNum - 1];
   return {
-    dayYear: `${day}. ${year}`,
+    day: day,
+    year: year,
     month: month
   };
 }
@@ -150,24 +152,24 @@ function renderGrid(times, activeIdx) {
   times.forEach((t, i) => {
     const isActive = activeIdx === i;
     const row = document.createElement("div");
-    row.className = `flex flex-row items-center justify-between py-4 sm:py-5 border-b border-neutral-300/30 last:border-b-0`;
+    row.className = `flex flex-row items-center py-4 sm:py-5 px-4 sm:px-6`;
     
     row.innerHTML = `
-      <div class="flex-1 text-left">
-        <div class="text-base sm:text-lg font-semibold ${isActive ? "text-emerald-600" : "text-neutral-900"}">
+      <div class="flex-1 text-left pr-4">
+        <div class="font-medium ${isActive ? "text-prayer-green" : "text-dark-text"} leading-tight" style="font-size: 31.5px;">
           ${labels.bs[i]}
         </div>
       </div>
       <div class="flex-1 text-center px-2 sm:px-4">
-        <div class="text-3xl sm:text-4xl lg:text-5xl font-black ${isActive ? "text-emerald-600" : "text-neutral-900"}">
+        <div class="font-semibold ${isActive ? "text-prayer-green" : "text-dark-text"}" style="font-size: 84px;">
           ${t}
         </div>
       </div>
-      <div class="flex-1 text-right">
-        <div class="text-base sm:text-lg font-semibold ${isActive ? "text-emerald-600" : "text-neutral-800"}">
+      <div class="flex-1 text-right pl-4">
+        <div class="font-medium ${isActive ? "text-prayer-green" : "text-dark-text"}" style="font-size: 31.5px;">
           ${labels.en[i]}
         </div>
-        <div class="text-xs sm:text-sm font-medium ${isActive ? "text-emerald-600" : "text-neutral-600"} mt-0.5">
+        <div class="font-normal ${isActive ? "text-prayer-green" : "text-dark-text"} mt-0.5 opacity-90" style="font-size: 31.5px;">
           ${labels.ar[i]}
         </div>
       </div>
@@ -178,19 +180,17 @@ function renderGrid(times, activeIdx) {
 
 async function main() {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  document.getElementById("year").textContent = String(new Date().getFullYear());
   
   // Organization names
   const orgNames = document.getElementById("org-names");
   orgNames.innerHTML = `
-    <div class="font-semibold">ISLAMSKA ZAJEDNICA U BOSNI I HERCEGOVINI</div>
-    <div class="font-semibold">ISLAMSKA ZAJEDNICA BOŠNJAKA SJEVERNE AMERIKE</div>
+    <div class="font-bold uppercase">ISLAMSKA ZAJEDNICA U BOSNI I HERCEGOVINI</div>
   `;
   
   // Mosque name
   const label = document.getElementById("mosque-name");
   const currentMosque = MOSQUES[loadMosqueIndex()];
-  label.textContent = `${currentMosque.name} - džemat "${currentMosque.name}"`;
+  label.textContent = `Medžlis Islamske zajednice Breza - Džemat "Mahala"`;
 
   async function load() {
     const locId = getLocationId();
@@ -221,10 +221,12 @@ async function main() {
     const now = currentTimeTZ(tz);
     document.getElementById("clock").textContent = fmtTimeWithSeconds(now, tz);
     const gregorian = toGregorianDate(now, tz);
-    document.getElementById("date-day-year").textContent = gregorian.dayYear;
+    document.getElementById("date-day").textContent = gregorian.day;
+    document.getElementById("date-year").textContent = gregorian.year;
     document.getElementById("date-month").textContent = gregorian.month;
     const hijri = toHijri(now);
-    document.getElementById("hijri-day-year").textContent = hijri.dayYear;
+    document.getElementById("hijri-day").textContent = hijri.day;
+    document.getElementById("hijri-year").textContent = hijri.year;
     document.getElementById("hijri-month").textContent = hijri.month;
     return now;
   }
