@@ -1,17 +1,33 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from "react";
 
 const API = "https://api.vaktija.ba/vaktija/v1";
 
 const labels = {
   en: ["Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"],
-  bs: ["Sabah u džamiji", "Izlazak sunca", "Podne", "Ikindija", "Akšam", "Jacija"],
-  ar: ["الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء"]
+  bs: [
+    "Sabah u džamiji",
+    "Izlazak sunca",
+    "Podne",
+    "Ikindija",
+    "Akšam",
+    "Jacija",
+  ],
+  ar: ["الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء"],
 };
 
 const hijriMonths = [
-  "muharram", "safar", "rabiʿ al-awwal", "rabiʿ al-thani", 
-  "jumada al-awwal", "jumada al-thani", "redžeb", "šaʿban",
-  "ramadan", "šavval", "dhu al-qadah", "dhu al-hijjah"
+  "muharram",
+  "safar",
+  "rabiʿ al-awwal",
+  "rabiʿ al-thani",
+  "jumada al-awwal",
+  "jumada al-thani",
+  "redžeb",
+  "šaʿban",
+  "ramadan",
+  "šavval",
+  "dhu al-qadah",
+  "dhu al-hijjah",
 ];
 
 const MOSQUES = [
@@ -20,8 +36,13 @@ const MOSQUES = [
   { name: "Masjid Al-Ikhlas", city: "Surabaya" },
 ];
 
-function saveMosqueIndex(i) { localStorage.setItem("mosqueIndex", String(i)); }
-function loadMosqueIndex() { const v = localStorage.getItem("mosqueIndex"); return v ? Number(v) : 0; }
+function saveMosqueIndex(i) {
+  localStorage.setItem("mosqueIndex", String(i));
+}
+function loadMosqueIndex() {
+  const v = localStorage.getItem("mosqueIndex");
+  return v ? Number(v) : 0;
+}
 
 function isoDateInTZ(date, tz) {
   return new Intl.DateTimeFormat("en-GB", {
@@ -46,25 +67,35 @@ function fmtTimeWithSeconds(date, tz) {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
-    hourCycle: "h23"
+    hourCycle: "h23",
   }).formatToParts(date);
-  
-  const h = formatted.find(p => p.type === "hour").value;
-  const m = formatted.find(p => p.type === "minute").value;
-  const s = formatted.find(p => p.type === "second").value;
+
+  const h = formatted.find((p) => p.type === "hour").value;
+  const m = formatted.find((p) => p.type === "minute").value;
+  const s = formatted.find((p) => p.type === "second").value;
   return `${h}:${m}:${s}`;
 }
 
 function islamicToJD(y, m, d) {
   const epoch = 1948439.5;
-  return d + Math.ceil(29.5 * (m - 1)) + (y - 1) * 354 + Math.floor((3 + 11 * y) / 30) + epoch - 1;
+  return (
+    d +
+    Math.ceil(29.5 * (m - 1)) +
+    (y - 1) * 354 +
+    Math.floor((3 + 11 * y) / 30) +
+    epoch -
+    1
+  );
 }
 
 function jdToIslamic(jd) {
   const epoch = 1948439.5;
   const days = jd - epoch;
   const year = Math.floor((30 * days + 10646) / 10631);
-  const month = Math.min(12, Math.ceil((days - (islamicToJD(year, 1, 1) - epoch)) / 29.5));
+  const month = Math.min(
+    12,
+    Math.ceil((days - (islamicToJD(year, 1, 1) - epoch)) / 29.5)
+  );
   const day = Math.floor(jd - islamicToJD(year, month, 1)) + 1;
   return { year, month, day };
 }
@@ -73,16 +104,28 @@ function gregorianToJD(y, m, d) {
   const a = Math.floor((14 - m) / 12);
   const y2 = y + 4800 - a;
   const m2 = m + 12 * a - 3;
-  return d + Math.floor((153 * m2 + 2) / 5) + 365 * y2 + Math.floor(y2 / 4) - Math.floor(y2 / 100) + Math.floor(y2 / 400) - 32045;
+  return (
+    d +
+    Math.floor((153 * m2 + 2) / 5) +
+    365 * y2 +
+    Math.floor(y2 / 4) -
+    Math.floor(y2 / 100) +
+    Math.floor(y2 / 400) -
+    32045
+  );
 }
 
 function toHijri(date) {
-  const jd = gregorianToJD(date.getFullYear(), date.getMonth() + 1, date.getDate());
+  const jd = gregorianToJD(
+    date.getFullYear(),
+    date.getMonth() + 1,
+    date.getDate()
+  );
   const { year, month, day } = jdToIslamic(jd);
   return {
     day: String(day).padStart(2, "0"),
     year: String(year),
-    month: hijriMonths[month - 1]
+    month: hijriMonths[month - 1],
   };
 }
 
@@ -91,22 +134,32 @@ function toGregorianDate(date, tz) {
     timeZone: tz,
     year: "numeric",
     month: "numeric",
-    day: "2-digit"
+    day: "2-digit",
   }).formatToParts(date);
-  
-  const day = formatted.find(p => p.type === "day").value;
-  const year = formatted.find(p => p.type === "year").value;
-  const monthNum = parseInt(formatted.find(p => p.type === "month").value);
-  
+
+  const day = formatted.find((p) => p.type === "day").value;
+  const year = formatted.find((p) => p.type === "year").value;
+  const monthNum = parseInt(formatted.find((p) => p.type === "month").value);
+
   const monthNames = [
-    "januar", "februar", "mart", "april", "maj", "jun",
-    "jul", "avgust", "septembar", "oktobar", "novembar", "decembar"
+    "januar",
+    "februar",
+    "mart",
+    "april",
+    "maj",
+    "jun",
+    "jul",
+    "avgust",
+    "septembar",
+    "oktobar",
+    "novembar",
+    "decembar",
   ];
   const month = monthNames[monthNum - 1];
   return {
     day: day,
     year: year,
-    month: month
+    month: month,
   };
 }
 
@@ -123,7 +176,16 @@ function parseHHMM(hhmm, tz, dayOffset = 0) {
       0
     )
   );
-  const str = new Intl.DateTimeFormat("en-US", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).format(base);
+  const str = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).format(base);
   const d = new Date(str);
   return isNaN(d.getTime()) ? base : d;
 }
@@ -150,11 +212,26 @@ async function fetchTimes(locId) {
 
 function App() {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  
+
   const [clock, setClock] = useState("--:--:--");
-  const [gregorianDate, setGregorianDate] = useState({ day: "--", year: "--", month: "--" });
-  const [hijriDate, setHijriDate] = useState({ day: "--", year: "--", month: "--" });
-  const [prayerTimes, setPrayerTimes] = useState(["--:--","--:--","--:--","--:--","--:--","--:--"]);
+  const [gregorianDate, setGregorianDate] = useState({
+    day: "--",
+    year: "--",
+    month: "--",
+  });
+  const [hijriDate, setHijriDate] = useState({
+    day: "--",
+    year: "--",
+    month: "--",
+  });
+  const [prayerTimes, setPrayerTimes] = useState([
+    "--:--",
+    "--:--",
+    "--:--",
+    "--:--",
+    "--:--",
+    "--:--",
+  ]);
   const [activePrayerIndex, setActivePrayerIndex] = useState(-1);
   const [status, setStatus] = useState("");
   const [schedule, setSchedule] = useState(null);
@@ -179,19 +256,19 @@ function App() {
       setPrepared(prepared);
       setSchedule(schedule);
       setStatus(data.lokacija ? `Location: ${data.lokacija}` : "");
-      
+
       // Update active prayer index
       const now = currentTimeTZ(tz);
       let idx = -1;
       for (let i = schedule.length - 1; i >= 0; i--) {
-        if (now >= schedule[i]) { 
-          idx = i; 
-          break; 
+        if (now >= schedule[i]) {
+          idx = i;
+          break;
         }
       }
       setActivePrayerIndex(idx);
     } catch (e) {
-      setPrayerTimes(["--:--","--:--","--:--","--:--","--:--","--:--"]);
+      setPrayerTimes(["--:--", "--:--", "--:--", "--:--", "--:--", "--:--"]);
       setStatus("Unable to load prayer times");
       setSchedule(null);
       setPrepared(null);
@@ -209,14 +286,14 @@ function App() {
     // Update clock and dates every second
     const clockInterval = setInterval(() => {
       const now = updateClockAndDates();
-      
+
       // Update active prayer based on current time
       if (schedule) {
         let idx = -1;
         for (let i = schedule.length - 1; i >= 0; i--) {
-          if (now >= schedule[i]) { 
-            idx = i; 
-            break; 
+          if (now >= schedule[i]) {
+            idx = i;
+            break;
           }
         }
         setActivePrayerIndex(idx);
@@ -251,21 +328,25 @@ function App() {
         <div className="prayer-card-container max-w-2xl w-full">
           {/* Header Section */}
           <header className="mb-6 sm:mb-8">
-            <div className="flex items-center gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6">
-              <div className="logo flex-shrink-0"></div>
+            <div className="flex items-center gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 w-fit mx-auto">
+              <img src="/images/logo.svg" alt="Logo" className="w-14 h-14" />
               <div className="flex flex-col">
-                <div className="flex flex-col text-xs sm:text-sm lg:text-base text-dark-text">
-                  <div className="font-bold uppercase">ISLAMSKA ZAJEDNICA U BOSNI I HERCEGOVINI</div>
+                <div className="flex flex-col text-xs sm:text-lg lg:text-base text-dark-text">
+                  <p className="font-bold uppercase text-prayer-green">
+                    ISLAMSKA ZAJEDNICA U BOSNI I HERCEGOVINI
+                  </p>
                 </div>
-                <div className="text-xs sm:text-sm lg:text-base font-normal text-dark-text mt-1">
+                <div className="text-xs sm:text-base lg:text-base font-normal text-islamic-date mt-1 text-center">
                   Medžlis Islamske zajednice Breza - Džemat "Mahala"
                 </div>
               </div>
             </div>
-            
+
             {/* Current Time Display */}
-            <div className="rounded-lg border border-light-border bg-transparent px-6 py-4 sm:px-8 sm:py-6 text-center">
-              <div className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-dark-text">{clock}</div>
+            <div className="rounded-lg border border-light-border p-3 mx-auto w-fit">
+              <div className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-dark-text">
+                {clock}
+              </div>
             </div>
           </header>
 
@@ -273,57 +354,98 @@ function App() {
           <section className="mb-6 sm:mb-8">
             <div className="flex flex-row gap-4 sm:gap-6 justify-center">
               {/* Gregorian Date Box */}
-              <div className="rounded-lg border border-light-border bg-transparent px-6 py-5 sm:px-8 sm:py-6 lg:px-10 lg:py-8 text-center flex-1 max-w-xs">
+              <div className="rounded-lg border border-light-border bg-transparent p-3 text-center flex-1 max-w-xs">
                 <div className="mb-2">
-                  <span className="text-5xl sm:text-6xl lg:text-7xl font-bold text-prayer-green">{gregorianDate.day}</span>
-                  <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-prayer-green">.</span>
-                  <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-prayer-green">{gregorianDate.year}</span>
+                  <span className="text-5xl sm:text-6xl lg:text-7xl font-bold text-prayer-green">
+                    {gregorianDate.day}
+                  </span>
+                  <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-prayer-green">
+                    .
+                  </span>
+                  <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-prayer-green">
+                    {gregorianDate.year}
+                  </span>
                 </div>
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-dark-text">{gregorianDate.month}</div>
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-prayer-green">
+                  {gregorianDate.month}
+                </div>
               </div>
-              
+
               {/* Islamic Date Box */}
-              <div className="rounded-lg border border-light-border bg-transparent px-6 py-5 sm:px-8 sm:py-6 lg:px-10 lg:py-8 text-center flex-1 max-w-xs">
+              <div className="rounded-lg border border-light-border bg-transparent p-3 text-center flex-1 max-w-xs">
                 <div className="mb-2">
-                  <span className="text-5xl sm:text-6xl lg:text-7xl font-bold text-islamic-date">{hijriDate.day}</span>
-                  <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-islamic-date">.</span>
-                  <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-islamic-date">{hijriDate.year}</span>
+                  <span className="text-5xl sm:text-6xl lg:text-7xl font-bold text-islamic-date">
+                    {hijriDate.day}
+                  </span>
+                  <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-islamic-date">
+                    .
+                  </span>
+                  <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-islamic-date">
+                    {hijriDate.year}
+                  </span>
                 </div>
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-islamic-date">{hijriDate.month}</div>
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-islamic-date">
+                  {hijriDate.month}
+                </div>
               </div>
             </div>
           </section>
 
           {/* Prayer Times Section */}
           <section className="mb-6 sm:mb-8">
-            <div className="bg-transparent rounded-lg overflow-hidden border border-light-border">
+            <div className="rounded-lg overflow-hidden">
               {/* Title Bar */}
-              <div className="bg-prayer-green text-white px-6 py-3 sm:py-4 rounded-t-lg">
-                <div className="text-lg sm:text-xl lg:text-2xl font-bold text-center uppercase">VRIJEME NAMAZA | PRAYER TIMES</div>
+              <div className="bg-prayer-green text-white px-6 py-3 sm:py-4 rounded-lg">
+                <div className="text-lg sm:text-3xl lg:text-xl font-bold text-center uppercase">
+                  VRIJEME NAMAZA | PRAYER TIMES
+                </div>
               </div>
-              
+
               {/* Prayer List */}
               <div className="bg-transparent">
                 <div className="flex flex-col">
                   {prayerTimes.map((time, i) => {
                     const isActive = activePrayerIndex === i;
                     return (
-                      <div key={i} className={`prayer-row flex flex-row items-center py-4 sm:py-5 px-4 sm:px-6`}>
+                      <div
+                        key={i}
+                        className={`prayer-row flex flex-row items-center py-4 sm:py-5 px-4 sm:px-6`}
+                      >
                         <div className="flex-1 text-left pr-4">
-                          <div className={`font-medium ${isActive ? "text-prayer-green" : "text-dark-text"} leading-tight`} style={{fontSize: "31.5px"}}>
+                          <div
+                            className={`font-medium ${
+                              isActive ? "text-prayer-green" : "text-dark-text"
+                            } leading-tight`}
+                            style={{ fontSize: "31.5px" }}
+                          >
                             {labels.bs[i]}
                           </div>
                         </div>
                         <div className="flex-1 text-center px-2 sm:px-4">
-                          <div className={`font-semibold ${isActive ? "text-prayer-green" : "text-dark-text"}`} style={{fontSize: "84px"}}>
+                          <div
+                            className={`font-semibold ${
+                              isActive ? "text-prayer-green" : "text-dark-text"
+                            }`}
+                            style={{ fontSize: "84px" }}
+                          >
                             {time}
                           </div>
                         </div>
                         <div className="flex-1 text-right pl-4">
-                          <div className={`font-medium ${isActive ? "text-prayer-green" : "text-dark-text"}`} style={{fontSize: "31.5px"}}>
+                          <div
+                            className={`font-medium ${
+                              isActive ? "text-prayer-green" : "text-dark-text"
+                            }`}
+                            style={{ fontSize: "31.5px" }}
+                          >
                             {labels.en[i]}
                           </div>
-                          <div className={`font-normal ${isActive ? "text-prayer-green" : "text-dark-text"} mt-0.5 opacity-90`} style={{fontSize: "31.5px"}}>
+                          <div
+                            className={`font-normal ${
+                              isActive ? "text-prayer-green" : "text-dark-text"
+                            } mt-0.5 opacity-90`}
+                            style={{ fontSize: "31.5px" }}
+                          >
                             {labels.ar[i]}
                           </div>
                         </div>
@@ -333,13 +455,16 @@ function App() {
                 </div>
               </div>
             </div>
-            <div className="mt-4 text-center text-sm text-dark-text opacity-70">{status}</div>
+            <div className="mt-4 text-center text-sm text-dark-text opacity-70">
+              {status}
+            </div>
           </section>
-
           {/* Footer Section */}
-          <footer className="bg-prayer-green text-white px-6 py-5 sm:px-8 sm:py-6 lg:px-10 lg:py-8 rounded-lg">
+          <footer className="bg-prayer-green text-white px-6 py-5 sm:px-8 sm:py-6 lg:px-10 lg:py-8 -mx-8 mt-8 rounded-b-lg">
             <p className="text-sm sm:text-base text-center leading-relaxed">
-              Allah's Messenger ( ﷺ ) said, "By Him in Whose Hands my life is, none of you will have faith till he loves me more than his father and his children."
+              Allah's Messenger ( ﷺ ) said, "By Him in Whose Hands my life is,
+              none of you will have faith till he loves me more than his father
+              and his children."
             </p>
           </footer>
         </div>
@@ -349,4 +474,3 @@ function App() {
 }
 
 export default App;
-
