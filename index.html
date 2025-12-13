@@ -4,79 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mosque Prayer Times</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="./assets/styles.css">
   </head>
-  <body class="min-h-screen bg-dark-background">
-    <div class="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      <!-- Main Card Container -->
-      <div class="prayer-card-container max-w-2xl w-full">
-        <!-- Header Section -->
-        <header class="mb-6 sm:mb-8">
-          <div class="flex items-center gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6">
-            <div id="logo" class="flex-shrink-0"></div>
-            <div class="flex flex-col">
-              <div id="org-names" class="flex flex-col text-xs sm:text-sm lg:text-base text-dark-text"></div>
-              <div id="mosque-name" class="text-xs sm:text-sm lg:text-base font-normal text-dark-text mt-1"></div>
-            </div>
-          </div>
-          
-          <!-- Current Time Display -->
-          <div class="rounded-lg border border-light-border bg-transparent px-6 py-4 sm:px-8 sm:py-6 text-center">
-            <div id="clock" class="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-dark-text">--:--:--</div>
-          </div>
-        </header>
-
-        <!-- Date Section -->
-        <section class="mb-6 sm:mb-8">
-          <div class="flex flex-row gap-4 sm:gap-6 justify-center">
-            <!-- Gregorian Date Box -->
-            <div class="rounded-lg border border-light-border bg-transparent px-6 py-5 sm:px-8 sm:py-6 lg:px-10 lg:py-8 text-center flex-1 max-w-xs">
-              <div class="mb-2">
-                <span id="date-day" class="text-5xl sm:text-6xl lg:text-7xl font-bold text-prayer-green"></span>
-                <span class="text-2xl sm:text-3xl lg:text-4xl font-bold text-prayer-green">.</span>
-                <span id="date-year" class="text-2xl sm:text-3xl lg:text-4xl font-bold text-prayer-green"></span>
-              </div>
-              <div id="date-month" class="text-2xl sm:text-3xl lg:text-4xl font-bold text-dark-text"></div>
-            </div>
-            
-            <!-- Islamic Date Box -->
-            <div class="rounded-lg border border-light-border bg-transparent px-6 py-5 sm:px-8 sm:py-6 lg:px-10 lg:py-8 text-center flex-1 max-w-xs">
-              <div class="mb-2">
-                <span id="hijri-day" class="text-5xl sm:text-6xl lg:text-7xl font-bold text-islamic-date"></span>
-                <span class="text-2xl sm:text-3xl lg:text-4xl font-bold text-islamic-date">.</span>
-                <span id="hijri-year" class="text-2xl sm:text-3xl lg:text-4xl font-bold text-islamic-date"></span>
-              </div>
-              <div id="hijri-month" class="text-2xl sm:text-3xl lg:text-4xl font-bold text-islamic-date"></div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Prayer Times Section -->
-        <section class="mb-6 sm:mb-8">
-          <div class="bg-transparent rounded-lg overflow-hidden border border-light-border">
-            <!-- Title Bar -->
-            <div class="bg-prayer-green text-white px-6 py-3 sm:py-4 rounded-t-lg">
-              <div class="text-lg sm:text-xl lg:text-2xl font-bold text-center uppercase">VRIJEME NAMAZA | PRAYER TIMES</div>
-            </div>
-            
-            <!-- Prayer List -->
-            <div class="bg-transparent">
-              <div id="grid" class="flex flex-col"></div>
-            </div>
-          </div>
-          <div id="status" class="mt-4 text-center text-sm text-dark-text opacity-70"></div>
-        </section>
-
-        <!-- Footer Section -->
-        <footer class="bg-prayer-green text-white px-6 py-5 sm:px-8 sm:py-6 lg:px-10 lg:py-8 rounded-lg">
-          <p class="text-sm sm:text-base text-center leading-relaxed">
-            Allah's Messenger ( ﷺ ) said, "By Him in Whose Hands my life is, none of you will have faith till he loves me more than his father and his children."
-          </p>
-        </footer>
-      </div>
-    </div>
-
-    <script type="module" src="./assets/app.js"></script>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
