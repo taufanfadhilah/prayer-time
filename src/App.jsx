@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { DEFAULT_FOOTER_TEXT, loadPageConfig, savePageConfig } from "./pageConfig";
 
 const API = "https://api.vaktija.ba/vaktija/v1";
 const STORAGE_KEY = "vaktijaCache";
@@ -251,6 +252,7 @@ function App() {
   const [schedule, setSchedule] = useState(null);
   const [prepared, setPrepared] = useState(null);
   const [hijriMonthApi, setHijriMonthApi] = useState("");
+  const [config, setConfig] = useState(() => loadPageConfig());
 
   const updateClockAndDates = () => {
     const now = currentTimeTZ(tz);
@@ -266,10 +268,24 @@ function App() {
     const locId = getLocationId();
     try {
       const data = await getPrayerData(locId, tz);
-      const prepared = data.vakat;
-      const schedule = prepared.map((t) => parseHHMM(t, tz));
-      setPrepared(prepared);
-      setSchedule(schedule);
+      let nextPrepared = data.vakat;
+
+      // Initialize Fajr time in config from API if not set yet
+      if (!config.fajrTime && nextPrepared && nextPrepared.length > 0) {
+        const nextConfig = {
+          ...config,
+          fajrTime: nextPrepared[0],
+        };
+        setConfig(nextConfig);
+        savePageConfig(nextConfig);
+      } else if (config.fajrTime && nextPrepared && nextPrepared.length > 0) {
+        // Override Fajr time with configured value
+        nextPrepared = [config.fajrTime, ...nextPrepared.slice(1)];
+      }
+
+      const nextSchedule = nextPrepared.map((t) => parseHHMM(t, tz));
+      setPrepared(nextPrepared);
+      setSchedule(nextSchedule);
       setStatus(data.lokacija ? `Location: ${data.lokacija}` : "");
 
       // Parse Hijri month from API date string, e.g. "25. džumade-l-uhra 1447"
@@ -302,7 +318,7 @@ function App() {
       setPrepared(null);
       setActivePrayerIndex(-1);
     }
-  }, [tz]);
+  }, [tz, config]);
 
   useEffect(() => {
     // Initial load
@@ -501,9 +517,7 @@ function App() {
           {/* Footer Section */}
           <footer className="bg-prayer-green text-white px-6 py-5 sm:px-8 sm:py-6 lg:px-10 lg:py-8 -mx-8 mt-8 rounded-b-lg">
             <p className="text-sm sm:text-base text-center leading-relaxed">
-              Allah's Messenger ( ﷺ ) said, "By Him in Whose Hands my life is,
-              none of you will have faith till he loves me more than his father
-              and his children."
+              {config.footerText || DEFAULT_FOOTER_TEXT}
             </p>
           </footer>
         </div>
