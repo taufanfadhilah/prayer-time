@@ -236,6 +236,7 @@ function App() {
   const [status, setStatus] = useState("");
   const [schedule, setSchedule] = useState(null);
   const [prepared, setPrepared] = useState(null);
+  const [hijriMonthApi, setHijriMonthApi] = useState("");
 
   const updateClockAndDates = () => {
     const now = currentTimeTZ(tz);
@@ -256,6 +257,19 @@ function App() {
       setPrepared(prepared);
       setSchedule(schedule);
       setStatus(data.lokacija ? `Location: ${data.lokacija}` : "");
+
+      // Parse Hijri month from API date string, e.g. "25. džumade-l-uhra 1447"
+      if (Array.isArray(data.datum) && data.datum[0]) {
+        const hijriString = data.datum[0];
+        const match = hijriString.match(/^\s*\d+\.\s+(.+)\s+\d+\s*$/);
+        if (match && match[1]) {
+          setHijriMonthApi(match[1]);
+        } else {
+          setHijriMonthApi("");
+        }
+      } else {
+        setHijriMonthApi("");
+      }
 
       // Update active prayer index
       const now = currentTimeTZ(tz);
@@ -385,7 +399,7 @@ function App() {
                   </span>
                 </div>
                 <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-islamic-date">
-                  {hijriDate.month}
+                  {hijriMonthApi || hijriDate.month}
                 </div>
               </div>
             </div>
