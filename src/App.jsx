@@ -137,28 +137,56 @@ function toGregorianDate(date, tz) {
 function parseHHMM(hhmm, tz, dayOffset = 0) {
   const [h, m] = hhmm.split(":").map(Number);
   const now = new Date();
-  const base = new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate() + dayOffset,
-      h,
-      m,
-      0
-    )
-  );
-  const str = new Intl.DateTimeFormat("en-US", {
+  
+  // Get today's date string in the target timezone (YYYY-MM-DD format)
+  const dateFormatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const dateStr = dateFormatter.format(now);
+  const [year, month, day] = dateStr.split("-").map(Number);
+  
+  // Create date string in ISO format: YYYY-MM-DDTHH:mm:ss
+  // We'll treat this as if it's in the target timezone and convert to a proper Date
+  const isoString = `${year}-${String(month).padStart(2, '0')}-${String(day + dayOffset).padStart(2, '0')}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
+  
+  // Parse as UTC first (since ISO strings without timezone are treated as UTC)
+  const utcDate = new Date(isoString + 'Z');
+  
+  // Now we need to adjust: what UTC time represents "h:m" in timezone tz?
+  // Method: find the timezone offset by creating a test date
+  // Calculate what the timezone offset is right now
+  const nowUtc = new Date(now.toISOString());
+  const nowInTz = new Intl.DateTimeFormat("en-US", {
     timeZone: tz,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit",
     hourCycle: "h23",
-  }).format(base);
-  const d = new Date(str);
-  return isNaN(d.getTime()) ? base : d;
+  }).formatToParts(now);
+  
+  // Create a date representing "now" as if it were in local time with tz's display
+  const nowAsTzLocal = new Date(
+    parseInt(nowInTz.find(p => p.type === "year").value),
+    parseInt(nowInTz.find(p => p.type === "month").value) - 1,
+    parseInt(nowInTz.find(p => p.type === "day").value),
+    parseInt(nowInTz.find(p => p.type === "hour").value),
+    parseInt(nowInTz.find(p => p.type === "minute").value),
+    0
+  );
+  
+  // The offset between actual now and the local representation of tz time
+  const tzOffsetMs = now.getTime() - nowAsTzLocal.getTime();
+  
+  // Create the target date in local timezone
+  const targetLocal = new Date(year, month - 1, day + dayOffset, h, m, 0);
+  
+  // Adjust by the timezone offset to get the correct UTC time
+  return new Date(targetLocal.getTime() - tzOffsetMs);
 }
 
 function currentTimeTZ(tz) {
@@ -305,12 +333,16 @@ function App() {
       const now = currentTimeTZ(tz);
       let idx = -1;
       if (nextSchedule && nextSchedule.length) {
+        // Find the most recent prayer time that has passed
+        // Check from most recent (last) to oldest (first)
         for (let i = nextSchedule.length - 1; i >= 0; i--) {
           if (now >= nextSchedule[i]) {
             idx = i;
             break;
           }
         }
+        // If we're after the last prayer of the day (Isya), keep it active until next Fajr
+        // (idx will already be set to the last prayer index, which is correct)
       }
       setActivePrayerIndex(idx);
     } catch (e) {
@@ -331,13 +363,18 @@ function App() {
   useEffect(() => {
     // Update clock and dates every second
     const clockInterval = setInterval(() => {
+      // Get fresh current time
       const now = updateClockAndDates();
 
-      // Update active prayer based on current time
-      if (schedule) {
+      // Update active prayer based on current time (checks every second)
+      if (schedule && schedule.length > 0) {
         let idx = -1;
+        // Find the most recent prayer time that has passed
+        // Check from most recent (last) to oldest (first)
+        // This runs every second, so active status will update immediately when a prayer time is reached
         for (let i = schedule.length - 1; i >= 0; i--) {
-          if (now >= schedule[i]) {
+          const prayerTime = schedule[i];
+          if (prayerTime && now >= prayerTime) {
             idx = i;
             break;
           }
