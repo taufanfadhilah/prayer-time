@@ -386,8 +386,8 @@ function App() {
         {/* Main Card Container */}
         <div className="prayer-card-container w-full h-full">
           {/* Header Section */}
-          <header className="mb-6 sm:mb-8">
-            <div className="flex items-center gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 w-fit mx-auto">
+          <header className="mb-3">
+            <div className="flex items-center gap-2 mb-2 w-fit mx-auto">
               <img src="/images/logo.svg" alt="Logo" className="w-14 h-14" />
               <div className="flex flex-col">
                 <div className="flex flex-col text-xs sm:text-lg lg:text-base text-dark-text">
@@ -402,48 +402,48 @@ function App() {
             </div>
 
             {/* Current Time Display */}
-            <div className="rounded-lg border border-light-border p-3 mx-auto w-fit min-w-[280px] sm:min-w-[340px] lg:min-w-[400px]">
-              <div className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-dark-text text-center">
+            <div className="rounded-lg border border-light-border p-2 mx-auto w-fit min-w-[240px]">
+              <div className="text-4xl font-bold tracking-tight text-dark-text text-center">
                 {clock}
               </div>
             </div>
           </header>
 
           {/* Date Section */}
-          <section className="mb-6 sm:mb-8">
-            <div className="flex flex-row gap-4 sm:gap-6 justify-center">
+          <section className="mb-3">
+            <div className="flex flex-row gap-3 justify-center">
               {/* Gregorian Date Box */}
-              <div className="rounded-lg border border-light-border bg-transparent p-3 text-center flex-1 max-w-xs">
-                <div className="mb-2">
-                  <span className="text-5xl sm:text-6xl lg:text-7xl font-bold text-prayer-green">
+              <div className="rounded-lg border border-light-border bg-transparent p-2 text-center flex-1 max-w-xs">
+                <div className="mb-1">
+                  <span className="text-4xl font-bold text-prayer-green">
                     {gregorianDate.day}
                   </span>
-                  <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-prayer-green">
+                  <span className="text-xl font-bold text-prayer-green">
                     .
                   </span>
-                  <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-prayer-green">
+                  <span className="text-xl font-bold text-prayer-green">
                     {gregorianDate.year}
                   </span>
                 </div>
-                <div className="text-2xl sm:text-3xl lg:text-[34px] font-bold text-prayer-green">
+                <div className="text-lg font-bold text-prayer-green">
                   {gregorianDate.month}
                 </div>
               </div>
 
               {/* Islamic Date Box */}
-              <div className="rounded-lg border border-light-border bg-transparent p-3 text-center flex-1 max-w-xs">
-                <div className="mb-2">
-                  <span className="text-5xl sm:text-6xl lg:text-7xl font-bold text-islamic-date">
+              <div className="rounded-lg border border-light-border bg-transparent p-2 text-center flex-1 max-w-xs">
+                <div className="mb-1">
+                  <span className="text-4xl font-bold text-islamic-date">
                     {hijriDate.day}
                   </span>
-                  <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-islamic-date">
+                  <span className="text-xl font-bold text-islamic-date">
                     .
                   </span>
-                  <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-islamic-date">
+                  <span className="text-xl font-bold text-islamic-date">
                     {hijriDate.year}
                   </span>
                 </div>
-                <div className="text-2xl sm:text-3xl lg:text-[34px] font-bold text-islamic-date">
+                <div className="text-lg font-bold text-islamic-date">
                   {hijriMonthApi || hijriDate.month}
                 </div>
               </div>
@@ -451,59 +451,59 @@ function App() {
           </section>
 
           {/* Prayer Times Section */}
-          <section className="mb-6 sm:mb-8">
-            <div className="rounded-lg overflow-hidden">
+          <section className="mb-3 flex-1 min-h-0 flex flex-col">
+            <div className="rounded-lg overflow-hidden flex flex-col flex-1 min-h-0">
               {/* Title Bar */}
-              <div className="bg-prayer-green text-white px-6 py-3 sm:py-4 rounded-lg">
-                <div className="text-lg sm:text-3xl lg:text-xl font-bold text-center uppercase">
+              <div className="bg-prayer-green text-white px-4 py-2 rounded-lg flex-shrink-0">
+                <div className="text-base font-bold text-center uppercase">
                   VRIJEME NAMAZA | PRAYER TIMES
                 </div>
               </div>
 
               {/* Prayer List */}
-              <div className="bg-transparent">
+              <div className="bg-transparent flex-1 overflow-y-auto">
                 <div className="flex flex-col">
                   {prayerTimes.map((time, i) => {
                     const isActive = activePrayerIndex === i;
                     return (
                       <div
                         key={i}
-                        className={`prayer-row flex flex-row items-center py-4 sm:py-5 px-4 sm:px-6`}
+                        className={`prayer-row flex flex-row items-center py-2 px-3`}
                       >
-                        <div className="flex-1 text-left pr-4">
+                        <div className="flex-1 text-left pr-3">
                           <div
                             className={`font-medium ${
                               isActive ? "text-prayer-green" : "text-dark-text"
                             } leading-tight`}
-                            style={{ fontSize: "31.5px" }}
+                            style={{ fontSize: "24px" }}
                           >
                             {labels.bs[i]}
                           </div>
                         </div>
-                        <div className="flex-1 text-center px-2 sm:px-4">
+                        <div className="flex-1 text-center px-2">
                           <div
                             className={`font-semibold ${
                               isActive ? "text-prayer-green" : "text-dark-text"
                             }`}
-                            style={{ fontSize: "84px" }}
+                            style={{ fontSize: "60px" }}
                           >
                             {time}
                           </div>
                         </div>
-                        <div className="flex-1 text-right pl-4">
+                        <div className="flex-1 text-right pl-3">
                           <div
                             className={`font-medium ${
                               isActive ? "text-prayer-green" : "text-dark-text"
                             }`}
-                            style={{ fontSize: "31.5px" }}
+                            style={{ fontSize: "24px" }}
                           >
                             {labels.en[i]}
                           </div>
                           <div
                             className={`font-normal ${
                               isActive ? "text-prayer-green" : "text-dark-text"
-                            } mt-0.5 opacity-90`}
-                            style={{ fontSize: "31.5px" }}
+                            } mt-0 opacity-90`}
+                            style={{ fontSize: "24px" }}
                           >
                             {labels.ar[i]}
                           </div>
@@ -516,8 +516,8 @@ function App() {
             </div>
           </section>
           {/* Footer Section */}
-          <footer className="bg-prayer-green text-white px-6 py-5 sm:px-8 sm:py-6 lg:px-10 lg:py-8 -mx-8 mt-8 rounded-b-lg">
-            <p className="text-sm sm:text-base text-center leading-relaxed">
+          <footer className="bg-prayer-green text-white px-4 py-2 flex-shrink-0">
+            <p className="text-xs text-center leading-tight">
               {config.footerText || DEFAULT_FOOTER_TEXT}
             </p>
           </footer>
