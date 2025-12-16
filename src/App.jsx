@@ -390,12 +390,12 @@ function App() {
             <div className="flex items-center gap-2 mb-2 w-fit mx-auto">
               <img src="/images/logo.svg" alt="Logo" className="w-14 h-14" />
               <div className="flex flex-col">
-                <div className="flex flex-col text-xs sm:text-lg lg:text-base text-dark-text">
-                  <p className="font-bold uppercase text-prayer-green">
+                <div className="flex flex-col text-dark-text">
+                  <p className="font-bold uppercase text-prayer-green" style={{ fontSize: "18px" }}>
                     ISLAMSKA ZAJEDNICA U BOSNI I HERCEGOVINI
                   </p>
                 </div>
-                <div className="text-xs sm:text-base lg:text-base font-normal text-islamic-date mt-1 text-center">
+                <div className="font-normal text-islamic-date mt-1 text-center" style={{ fontSize: "15px" }}>
                   Medžlis Islamske zajednice Breza - Džemat "Mahala"
                 </div>
               </div>
@@ -403,7 +403,7 @@ function App() {
 
             {/* Current Time Display */}
             <div className="rounded-lg border border-light-border p-2 mx-auto w-fit min-w-[240px]">
-              <div className="text-4xl font-bold tracking-tight text-dark-text text-center">
+              <div className="font-bold tracking-tight text-dark-text text-center" style={{ fontSize: "54px" }}>
                 {clock}
               </div>
             </div>
@@ -415,17 +415,17 @@ function App() {
               {/* Gregorian Date Box */}
               <div className="rounded-lg border border-light-border bg-transparent p-2 text-center flex-1 max-w-xs">
                 <div className="mb-1">
-                  <span className="text-4xl font-bold text-prayer-green">
+                  <span className="font-bold text-prayer-green" style={{ fontSize: "54px" }}>
                     {gregorianDate.day}
                   </span>
-                  <span className="text-xl font-bold text-prayer-green">
+                  <span className="font-bold text-prayer-green" style={{ fontSize: "30px" }}>
                     .
                   </span>
-                  <span className="text-xl font-bold text-prayer-green">
+                  <span className="font-bold text-prayer-green" style={{ fontSize: "30px" }}>
                     {gregorianDate.year}
                   </span>
                 </div>
-                <div className="text-lg font-bold text-prayer-green">
+                <div className="font-bold text-prayer-green" style={{ fontSize: "27px" }}>
                   {gregorianDate.month}
                 </div>
               </div>
@@ -433,17 +433,17 @@ function App() {
               {/* Islamic Date Box */}
               <div className="rounded-lg border border-light-border bg-transparent p-2 text-center flex-1 max-w-xs">
                 <div className="mb-1">
-                  <span className="text-4xl font-bold text-islamic-date">
+                  <span className="font-bold text-islamic-date" style={{ fontSize: "54px" }}>
                     {hijriDate.day}
                   </span>
-                  <span className="text-xl font-bold text-islamic-date">
+                  <span className="font-bold text-islamic-date" style={{ fontSize: "30px" }}>
                     .
                   </span>
-                  <span className="text-xl font-bold text-islamic-date">
+                  <span className="font-bold text-islamic-date" style={{ fontSize: "30px" }}>
                     {hijriDate.year}
                   </span>
                 </div>
-                <div className="text-lg font-bold text-islamic-date">
+                <div className="font-bold text-islamic-date" style={{ fontSize: "27px" }}>
                   {hijriMonthApi || hijriDate.month}
                 </div>
               </div>
@@ -455,7 +455,7 @@ function App() {
             <div className="rounded-lg overflow-hidden flex flex-col flex-1 min-h-0">
               {/* Title Bar */}
               <div className="bg-prayer-green text-white px-4 py-2 rounded-lg flex-shrink-0">
-                <div className="text-base font-bold text-center uppercase">
+                <div className="font-bold text-center uppercase" style={{ fontSize: "24px" }}>
                   VRIJEME NAMAZA | PRAYER TIMES
                 </div>
               </div>
@@ -475,7 +475,7 @@ function App() {
                             className={`font-medium ${
                               isActive ? "text-prayer-green" : "text-dark-text"
                             } leading-tight`}
-                            style={{ fontSize: "24px" }}
+                            style={{ fontSize: "36px" }}
                           >
                             {labels.bs[i]}
                           </div>
@@ -485,7 +485,7 @@ function App() {
                             className={`font-semibold ${
                               isActive ? "text-prayer-green" : "text-dark-text"
                             }`}
-                            style={{ fontSize: "60px" }}
+                            style={{ fontSize: "90px" }}
                           >
                             {time}
                           </div>
@@ -495,7 +495,7 @@ function App() {
                             className={`font-medium ${
                               isActive ? "text-prayer-green" : "text-dark-text"
                             }`}
-                            style={{ fontSize: "24px" }}
+                            style={{ fontSize: "36px" }}
                           >
                             {labels.en[i]}
                           </div>
@@ -503,7 +503,7 @@ function App() {
                             className={`font-normal ${
                               isActive ? "text-prayer-green" : "text-dark-text"
                             } mt-0 opacity-90`}
-                            style={{ fontSize: "24px" }}
+                            style={{ fontSize: "36px" }}
                           >
                             {labels.ar[i]}
                           </div>
@@ -517,7 +517,7 @@ function App() {
           </section>
           {/* Footer Section */}
           <footer className="bg-prayer-green text-white px-4 py-2 flex-shrink-0">
-            <p className="text-xs text-center leading-tight">
+            <p className="text-center leading-tight" style={{ fontSize: "18px" }}>
               {config.footerText || DEFAULT_FOOTER_TEXT}
             </p>
           </footer>
