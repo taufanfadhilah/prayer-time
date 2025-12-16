@@ -485,7 +485,7 @@ function App() {
                             className={`font-semibold ${
                               isActive ? "text-prayer-green" : "text-dark-text"
                             }`}
-                            style={{ fontSize: "90px" }}
+                            style={{ fontSize: "72px" }}
                           >
                             {time}
                           </div>
