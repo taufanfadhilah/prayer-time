@@ -379,8 +379,7 @@ function App() {
   }, [prepared]);
 
   return (
-    // <div className="tv-portrait-wrapper bg-dark-background">
-    <div className="bg-dark-background">
+    <div className="tv-portrait-wrapper bg-dark-background">
       <div className="w-full h-full flex">
         {/* Main Card Container */}
         <div className="prayer-card-container w-full h-full">
