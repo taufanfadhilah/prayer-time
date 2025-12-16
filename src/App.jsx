@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 const API = "https://api.vaktija.ba/vaktija/v1";
+const STORAGE_KEY = "vaktijaCache";
 
 const labels = {
   en: ["Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"],
@@ -163,16 +164,64 @@ function currentTimeTZ(tz) {
   return new Date();
 }
 
+function getTodayKey(tz) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  return formatter.format(new Date()); // YYYY-MM-DD in given tz
+}
+
 function getLocationId() {
   const saved = localStorage.getItem("locId");
   return saved ? Number(saved) : 15;
 }
 
-async function fetchTimes(locId) {
+async function fetchTimesFromApi(locId) {
   const url = `${API}/${locId}`;
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
+}
+
+async function getPrayerData(locId, tz) {
+  const todayKey = getTodayKey(tz);
+
+  // Try read from cache
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (
+        parsed &&
+        parsed.date === todayKey &&
+        parsed.locId === locId &&
+        parsed.data
+      ) {
+        return parsed.data;
+      }
+    }
+  } catch {
+    // Ignore cache errors and fall back to network
+  }
+
+  // Fallback: fetch from API and store
+  const data = await fetchTimesFromApi(locId);
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        date: todayKey,
+        locId,
+        data,
+      })
+    );
+  } catch {
+    // Ignore storage errors, we still return fresh data
+  }
+  return data;
 }
 
 function App() {
@@ -216,7 +265,7 @@ function App() {
   const loadPrayerTimes = useCallback(async () => {
     const locId = getLocationId();
     try {
-      const data = await fetchTimes(locId);
+      const data = await getPrayerData(locId, tz);
       const prepared = data.vakat;
       const schedule = prepared.map((t) => parseHHMM(t, tz));
       setPrepared(prepared);
@@ -285,11 +334,24 @@ function App() {
   }, [schedule]);
 
   useEffect(() => {
-    // Reload prayer times every 5 minutes
-    const prayerInterval = setInterval(loadPrayerTimes, 300000);
+    // Ensure data refreshes at (local) midnight and then once per day after that
+    let dailyIntervalId;
+
+    const now = new Date();
+    const nextMidnight = new Date(now);
+    nextMidnight.setDate(now.getDate() + 1);
+    nextMidnight.setHours(0, 0, 5, 0); // a few seconds after midnight
+
+    const msUntilMidnight = nextMidnight.getTime() - now.getTime();
+
+    const midnightTimeoutId = setTimeout(async () => {
+      await loadPrayerTimes();
+      dailyIntervalId = setInterval(loadPrayerTimes, 24 * 60 * 60 * 1000);
+    }, msUntilMidnight);
 
     return () => {
-      clearInterval(prayerInterval);
+      clearTimeout(midnightTimeoutId);
+      if (dailyIntervalId) clearInterval(dailyIntervalId);
     };
   }, [loadPrayerTimes]);
 
