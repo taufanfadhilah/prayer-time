@@ -301,13 +301,15 @@ function App() {
         setHijriMonthApi("");
       }
 
-      // Update active prayer index
+      // Update active prayer index using the freshly computed schedule
       const now = currentTimeTZ(tz);
       let idx = -1;
-      for (let i = schedule.length - 1; i >= 0; i--) {
-        if (now >= schedule[i]) {
-          idx = i;
-          break;
+      if (nextSchedule && nextSchedule.length) {
+        for (let i = nextSchedule.length - 1; i >= 0; i--) {
+          if (now >= nextSchedule[i]) {
+            idx = i;
+            break;
+          }
         }
       }
       setActivePrayerIndex(idx);
