@@ -3,8 +3,13 @@
 @tailwind utilities;
 
 /* optional base overrides */
-html, body {
+html,
+body,
+#root {
+  width: 100%;
   height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 body {
@@ -16,10 +21,9 @@ body {
 /* TV portrait wrapper: rotate entire app 90deg for landscape TV used as portrait */
 .tv-portrait-wrapper {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vh;
-  height: 100vw;
+  inset: 0;
+  width: 100vh;  /* width of rotated content (landscape viewport height) */
+  height: 100vw; /* height of rotated content (landscape viewport width) */
   transform-origin: top left;
   transform: rotate(90deg) translateY(-100vh);
   overflow: hidden;
@@ -37,6 +41,9 @@ body {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   position: relative;
   overflow: hidden;
+  max-width: 100vh;   
+  margin: 0 auto;
+  height: 100%;
 }
 
 /* Islamic Star Pattern Background Overlay */
