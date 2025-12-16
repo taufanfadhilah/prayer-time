@@ -30,37 +30,6 @@ const hijriMonths = [
   "dhu al-hijjah",
 ];
 
-const MOSQUES = [
-  { name: "Masjid Al-Hikmah", city: "Jakarta" },
-  { name: "Masjid Nurul Iman", city: "Bandung" },
-  { name: "Masjid Al-Ikhlas", city: "Surabaya" },
-];
-
-function saveMosqueIndex(i) {
-  localStorage.setItem("mosqueIndex", String(i));
-}
-function loadMosqueIndex() {
-  const v = localStorage.getItem("mosqueIndex");
-  return v ? Number(v) : 0;
-}
-
-function isoDateInTZ(date, tz) {
-  return new Intl.DateTimeFormat("en-GB", {
-    timeZone: tz,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
-}
-
-function fmtTime(date) {
-  return new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).format(date);
-}
-
 function fmtTimeWithSeconds(date, tz) {
   const formatted = new Intl.DateTimeFormat("en-GB", {
     timeZone: tz,
@@ -196,11 +165,7 @@ function currentTimeTZ(tz) {
 
 function getLocationId() {
   const saved = localStorage.getItem("locId");
-  return saved ? Number(saved) : 77;
-}
-
-function setLocationId(id) {
-  localStorage.setItem("locId", String(id));
+  return saved ? Number(saved) : 15;
 }
 
 async function fetchTimes(locId) {
@@ -336,10 +301,11 @@ function App() {
   }, [prepared]);
 
   return (
-    <div className="min-h-screen bg-dark-background">
-      <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    // <div className="tv-portrait-wrapper bg-dark-background">
+    <div className="bg-dark-background">
+      <div className="w-full h-full flex">
         {/* Main Card Container */}
-        <div className="prayer-card-container max-w-2xl w-full">
+        <div className="prayer-card-container w-full h-full">
           {/* Header Section */}
           <header className="mb-6 sm:mb-8">
             <div className="flex items-center gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 w-fit mx-auto">
@@ -357,8 +323,8 @@ function App() {
             </div>
 
             {/* Current Time Display */}
-            <div className="rounded-lg border border-light-border p-3 mx-auto w-fit">
-              <div className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-dark-text">
+            <div className="rounded-lg border border-light-border p-3 mx-auto w-fit min-w-[280px] sm:min-w-[340px] lg:min-w-[400px]">
+              <div className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-dark-text text-center">
                 {clock}
               </div>
             </div>
@@ -380,7 +346,7 @@ function App() {
                     {gregorianDate.year}
                   </span>
                 </div>
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-prayer-green">
+                <div className="text-2xl sm:text-3xl lg:text-[34px] font-bold text-prayer-green">
                   {gregorianDate.month}
                 </div>
               </div>
@@ -398,7 +364,7 @@ function App() {
                     {hijriDate.year}
                   </span>
                 </div>
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-islamic-date">
+                <div className="text-2xl sm:text-3xl lg:text-[34px] font-bold text-islamic-date">
                   {hijriMonthApi || hijriDate.month}
                 </div>
               </div>
@@ -468,9 +434,6 @@ function App() {
                   })}
                 </div>
               </div>
-            </div>
-            <div className="mt-4 text-center text-sm text-dark-text opacity-70">
-              {status}
             </div>
           </section>
           {/* Footer Section */}

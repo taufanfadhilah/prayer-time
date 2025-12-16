@@ -13,6 +13,18 @@ body {
   font-family: 'Alexandria', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
+/* TV portrait wrapper: rotate entire app 90deg for landscape TV used as portrait */
+.tv-portrait-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vh;
+  height: 100vw;
+  transform-origin: top left;
+  transform: rotate(90deg) translateY(-100vh);
+  overflow: hidden;
+}
+
 /* Main Card Container */
 .prayer-card-container {
   background-image: url('/images/bg.jpeg');
@@ -20,7 +32,6 @@ body {
   background-position: center;
   background-repeat: no-repeat;
   background-color: var(--card-background);
-  border-radius: 12px;
   padding: 2rem;
   padding-bottom: 0;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
@@ -141,7 +152,7 @@ body {
 
 /* Prayer time row styling */
 .prayer-row {
-  border-bottom: 2px solid rgba(44, 51, 59, 0.5) !important;
+  border-bottom: 1px solid rgba(44, 51, 59, 0.5) !important;
 }
 
 .prayer-row:last-child {
