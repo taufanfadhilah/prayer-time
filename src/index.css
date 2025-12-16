@@ -10,6 +10,7 @@ body,
   height: 100%;
   margin: 0;
   padding: 0;
+  overflow: hidden; /* Prevent scrollbars when rotated */
 }
 
 body {
@@ -19,14 +20,17 @@ body {
 }
 
 /* TV portrait wrapper: rotate entire app 90deg for landscape TV used as portrait */
+/* Optimized for 32-inch TV portrait mode (1920x1080 landscape -> 1080x1920 portrait) */
 .tv-portrait-wrapper {
   position: fixed;
-  inset: 0;
-  width: 100vh;  /* width of rotated content (landscape viewport height) */
-  height: 100vw; /* height of rotated content (landscape viewport width) */
-  transform-origin: top left;
-  transform: rotate(90deg) translateY(-100vh);
+  top: 50%;
+  left: 50%;
+  width: 100vh;  /* width of rotated content (landscape viewport height = 1080px on 32" Full HD TV) */
+  height: 100vw; /* height of rotated content (landscape viewport width = 1920px on 32" Full HD TV) */
+  transform-origin: center center;
+  transform: translate(-50%, -50%) rotate(90deg);
   overflow: hidden;
+  /* On 32-inch TV (1920x1080 landscape), this creates a 1080x1920 portrait display */
 }
 
 /* Main Card Container */
