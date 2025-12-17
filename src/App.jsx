@@ -4,7 +4,7 @@ import {
   loadPageConfig,
   savePageConfig,
 } from "./pageConfig";
-import { loadMosqueById, loadMosques as loadMosquesFromDb } from "./mosqueStore";
+import { loadMosqueById } from "./mosqueStore";
 
 const API = "https://api.vaktija.ba/vaktija/v1";
 const STORAGE_KEY = "vaktijaCache";
@@ -207,18 +207,6 @@ function readSelectedMosqueId() {
   }
 }
 
-function writeSelectedMosqueId(id) {
-  try {
-    if (!id) {
-      localStorage.removeItem(SELECTED_MOSQUE_ID_KEY);
-      return;
-    }
-    localStorage.setItem(SELECTED_MOSQUE_ID_KEY, String(id));
-  } catch {
-    // ignore
-  }
-}
-
 function expireLocalStorageDaily(tz) {
   const todayKey = getTodayKey(tz);
   try {
@@ -328,13 +316,6 @@ function App() {
     readSelectedMosqueId()
   );
   const [selectedMosque, setSelectedMosque] = useState(null);
-  const [mosques, setMosques] = useState([]);
-  const [mosquesLoading, setMosquesLoading] = useState(false);
-  const [mosquesError, setMosquesError] = useState("");
-  const [showMasjidPicker, setShowMasjidPicker] = useState(false);
-  const [pickerMosqueId, setPickerMosqueId] = useState(() =>
-    readSelectedMosqueId()
-  );
 
   const effectiveFooterText =
     (selectedMosque?.footerText || "").trim().length > 0
@@ -486,28 +467,7 @@ function App() {
       clearTimeout(midnightTimeoutId);
       if (dailyIntervalId) clearInterval(dailyIntervalId);
     };
-  }, [loadPrayerTimes]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      setMosquesLoading(true);
-      setMosquesError("");
-      const res = await loadMosquesFromDb();
-      if (cancelled) return;
-      if (res?.error) {
-        setMosquesError(res.error);
-        setMosques([]);
-      } else {
-        setMosques(res.mosques || []);
-      }
-      setMosquesLoading(false);
-    };
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  }, [loadPrayerTimes, selectedMosqueId, tz]);
 
   useEffect(() => {
     // Fetch the selected masjid record from Supabase whenever UUID changes.
@@ -531,31 +491,6 @@ function App() {
     };
   }, [selectedMosqueId]);
 
-  useEffect(() => {
-    setPickerMosqueId(selectedMosqueId || "");
-  }, [selectedMosqueId]);
-
-  const applySelectedMasjid = async () => {
-    if (!pickerMosqueId) return;
-    const mosque = mosques.find((m) => m.id === pickerMosqueId);
-    if (!mosque) return;
-    // Persist only UUID; other data should be refetched from Supabase.
-    writeSelectedMosqueId(mosque.id);
-    setSelectedMosqueId(mosque.id);
-    setSelectedMosque(mosque);
-    setShowMasjidPicker(false);
-    await loadPrayerTimes(mosque);
-  };
-
-  const clearSelectedMasjid = async () => {
-    writeSelectedMosqueId("");
-    setSelectedMosqueId("");
-    setSelectedMosque(null);
-    setPickerMosqueId("");
-    setShowMasjidPicker(false);
-    await loadPrayerTimes();
-  };
-
   // Update prayer times display when prepared changes
   useEffect(() => {
     if (prepared) {
@@ -564,103 +499,7 @@ function App() {
   }, [prepared]);
 
   return (
-    <div className="tv-portrait-wrapper bg-dark-background relative">
-      {/* Daily masjid selector (Supabase-backed) */}
-      <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
-        <button
-          type="button"
-          className="px-3 py-2 rounded-md bg-white/10 text-white text-xs font-semibold hover:bg-white/15"
-          onClick={() => setShowMasjidPicker(true)}
-        >
-          {selectedMosque?.name
-            ? `Masjid: ${selectedMosque.name}`
-            : selectedMosqueId
-              ? "Masjid: (loading...)"
-              : "Select Masjid"}
-        </button>
-        <div className="text-[10px] text-white/70">
-          Selection expires daily
-        </div>
-      </div>
-
-      {showMasjidPicker ? (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center px-4 z-50">
-          <div className="w-full max-w-xl rounded-lg border border-gray-300 bg-white p-5 sm:p-6 shadow-xl">
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div>
-                <div className="text-lg sm:text-xl font-bold text-gray-900">
-                  Select Masjid (for today)
-                </div>
-                <div className="text-xs sm:text-sm text-gray-600 mt-1">
-                  This will store <span className="font-mono">location_id</span>,{" "}
-                  <span className="font-mono">fajr_time</span>,{" "}
-                  <span className="font-mono">footer_text</span> in localStorage until midnight.
-                </div>
-              </div>
-              <button
-                type="button"
-                className="text-sm font-semibold text-gray-700 hover:text-gray-900"
-                onClick={() => setShowMasjidPicker(false)}
-              >
-                Close
-              </button>
-            </div>
-
-            {mosquesError ? (
-              <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs sm:text-sm text-red-700">
-                {mosquesError}
-              </div>
-            ) : null}
-
-            <div className="space-y-3">
-              <div className="flex flex-col">
-                <label className="block text-xs sm:text-sm mb-1 text-gray-700">
-                  Masjid
-                </label>
-                <select
-                  className="w-full rounded-md bg-white border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-prayer-green"
-                  value={pickerMosqueId}
-                  onChange={(e) => setPickerMosqueId(e.target.value)}
-                  disabled={mosquesLoading || mosques.length === 0}
-                >
-                  <option value="">
-                    {mosquesLoading
-                      ? "Loading…"
-                      : mosques.length === 0
-                        ? "No masjid found"
-                        : "Choose…"}
-                  </option>
-                  {mosques.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name} (loc: {m.locationId})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-900 text-xs sm:text-sm font-semibold hover:bg-gray-50"
-                  onClick={clearSelectedMasjid}
-                  disabled={!selectedMosqueId}
-                >
-                  Clear
-                </button>
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded-md bg-prayer-green text-white text-xs sm:text-sm font-semibold hover:bg-prayer-green/90 disabled:opacity-60 disabled:cursor-not-allowed"
-                  onClick={applySelectedMasjid}
-                  disabled={!pickerMosqueId}
-                >
-                  Apply
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
+    <div className="tv-portrait-wrapper bg-dark-background">
       <div className="w-full h-full flex">
         {/* Main Card Container */}
         <div className="prayer-card-container w-full h-full">
@@ -699,9 +538,9 @@ function App() {
 
           {/* Date Section */}
           <section className="mb-3">
-            <div className="flex flex-row gap-3 justify-center">
+            <div className="flex flex-row gap-2 justify-center">
               {/* Gregorian Date Box */}
-              <div className="rounded-lg border border-light-border bg-transparent p-2 text-center flex-1 max-w-xs">
+              <div className="rounded-lg border border-light-border bg-transparent px-2 py-1 text-center flex flex-col items-center justify-center flex-1 max-w-xs">
                 <div className="mb-0 leading-none">
                   <span
                     className="font-bold text-prayer-green"
@@ -723,7 +562,7 @@ function App() {
                   </span>
                 </div>
                 <div
-                  className="font-bold text-prayer-green"
+                  className="font-bold text-prayer-green -mt-1 leading-none"
                   style={{ fontSize: "32px" }}
                 >
                   {gregorianDate.month}
@@ -731,8 +570,8 @@ function App() {
               </div>
 
               {/* Islamic Date Box */}
-              <div className="rounded-lg border border-light-border bg-transparent p-2 text-center flex-1 max-w-xs">
-                <div className="mb-1 leading-none">
+              <div className="rounded-lg border border-light-border bg-transparent px-2 py-1 text-center flex flex-col items-center justify-center flex-1 max-w-xs">
+                <div className="mb-0 leading-none">
                   <span
                     className="font-bold text-islamic-date"
                     style={{ fontSize: "54px" }}
@@ -753,7 +592,7 @@ function App() {
                   </span>
                 </div>
                 <div
-                  className="font-bold text-islamic-date"
+                  className="font-bold text-islamic-date -mt-1 leading-none"
                   style={{ fontSize: "32px" }}
                 >
                   {hijriMonthApi || hijriDate.month}
