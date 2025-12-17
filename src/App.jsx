@@ -5,6 +5,7 @@ import {
   savePageConfig,
 } from "./pageConfig";
 import { loadMosqueById } from "./mosqueStore";
+import { findLocationNameById } from "./locations";
 
 const API = "https://api.vaktija.ba/vaktija/v1";
 const STORAGE_KEY = "vaktijaCache";
@@ -317,6 +318,15 @@ function App() {
   );
   const [selectedMosque, setSelectedMosque] = useState(null);
 
+  const selectedLocationName =
+    selectedMosque?.locationId ? findLocationNameById(selectedMosque.locationId) : "";
+
+  const masjidHeaderLine = selectedMosque?.name
+    ? `Medžlis Islamske zajednice${selectedLocationName ? ` ${selectedLocationName}` : ""} - Džemat ${selectedMosque.name}`
+    : selectedMosqueId
+      ? "Medžlis Islamske zajednice - Džemat (loading...)"
+      : 'Medžlis Islamske zajednice Breza - Džemat "Mahala"';
+
   const effectiveFooterText =
     (selectedMosque?.footerText || "").trim().length > 0
       ? selectedMosque.footerText.trim()
@@ -520,7 +530,7 @@ function App() {
                   className="font-normal text-islamic-date mt-1 text-center"
                   style={{ fontSize: "15px" }}
                 >
-                  Medžlis Islamske zajednice Breza - Džemat "Mahala"
+                  {masjidHeaderLine}
                 </div>
               </div>
             </div>
