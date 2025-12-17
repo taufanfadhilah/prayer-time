@@ -126,6 +126,54 @@ The application automatically detects the user's timezone using:
 Intl.DateTimeFormat().resolvedOptions().timeZone
 ```
 
+## Supabase (Mosques CRUD Storage)
+
+This project can store the **mosques CRUD data** in a Supabase Postgres table (used by the `/admin/config` page).
+
+### 1) Create the database table
+
+- In your Supabase dashboard, open **SQL Editor**
+- Copy/paste and run the SQL in `supabase/mosques_schema.sql`
+
+This creates `public.mosques` with columns:
+- `id` (uuid, generated automatically)
+- `name` (text)
+- `location_id` (int)
+- `fajr_time` (text, nullable)
+- `footer_text` (text, nullable)
+- `created_at` (timestamp)
+
+### 2) Get your Supabase URL + anon key
+
+- Go to **Project Settings → API**
+- Copy:
+  - **Project URL**
+  - **anon public** API key
+
+### 3) Configure Vite env vars
+
+Create a local file called `.env.local` in the project root (same folder as `package.json`) with:
+
+```bash
+VITE_SUPABASE_URL=YOUR_PROJECT_URL
+VITE_SUPABASE_ANON_KEY=YOUR_ANON_KEY
+```
+
+You can use `supabase.env.example` as a template.
+
+Then restart the dev server:
+
+```bash
+npm run dev
+```
+
+### Security note (important)
+
+This app is a **pure frontend**. Your Supabase **anon key will be public** in the browser.
+
+- Quickest setup: keep **RLS OFF** on the `mosques` table (works immediately, not secure).
+- Production setup: enable **RLS** and require **Supabase Auth** (or a server-side API) for write operations.
+
 ## Technologies Used
 
 - **React 18.3.1** - UI library
