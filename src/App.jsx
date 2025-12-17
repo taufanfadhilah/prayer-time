@@ -322,7 +322,7 @@ function App() {
     selectedMosque?.locationId ? findLocationNameById(selectedMosque.locationId) : "";
 
   const masjidHeaderLine = selectedMosque?.name
-    ? `Medžlis Islamske zajednice${selectedLocationName ? ` ${selectedLocationName}` : ""} - Džemat ${selectedMosque.name}`
+    ? `Medžlis Islamske zajednice${selectedLocationName ? ` ${selectedLocationName}` : ""} - ${selectedMosque.name}`
     : selectedMosqueId
       ? "Medžlis Islamske zajednice - Džemat (loading...)"
       : 'Medžlis Islamske zajednice Breza - Džemat "Mahala"';
