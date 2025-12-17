@@ -1,8 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
-import { DEFAULT_FOOTER_TEXT, loadPageConfig, savePageConfig } from "./pageConfig";
+import {
+  DEFAULT_FOOTER_TEXT,
+  loadPageConfig,
+  savePageConfig,
+} from "./pageConfig";
+import { loadMosqueById, loadMosques as loadMosquesFromDb } from "./mosqueStore";
 
 const API = "https://api.vaktija.ba/vaktija/v1";
 const STORAGE_KEY = "vaktijaCache";
+const LOCAL_STORAGE_DAY_KEY = "localStorageDay";
+const SELECTED_MOSQUE_ID_KEY = "selectedMosqueId";
 
 const labels = {
   en: ["Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"],
@@ -137,7 +144,7 @@ function toGregorianDate(date, tz) {
 function parseHHMM(hhmm, tz, dayOffset = 0) {
   const [h, m] = hhmm.split(":").map(Number);
   const now = new Date();
-  
+
   // Get today's date string in the target timezone (YYYY-MM-DD format)
   const dateFormatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: tz,
@@ -147,18 +154,7 @@ function parseHHMM(hhmm, tz, dayOffset = 0) {
   });
   const dateStr = dateFormatter.format(now);
   const [year, month, day] = dateStr.split("-").map(Number);
-  
-  // Create date string in ISO format: YYYY-MM-DDTHH:mm:ss
-  // We'll treat this as if it's in the target timezone and convert to a proper Date
-  const isoString = `${year}-${String(month).padStart(2, '0')}-${String(day + dayOffset).padStart(2, '0')}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
-  
-  // Parse as UTC first (since ISO strings without timezone are treated as UTC)
-  const utcDate = new Date(isoString + 'Z');
-  
-  // Now we need to adjust: what UTC time represents "h:m" in timezone tz?
-  // Method: find the timezone offset by creating a test date
-  // Calculate what the timezone offset is right now
-  const nowUtc = new Date(now.toISOString());
+
   const nowInTz = new Intl.DateTimeFormat("en-US", {
     timeZone: tz,
     year: "numeric",
@@ -168,23 +164,23 @@ function parseHHMM(hhmm, tz, dayOffset = 0) {
     minute: "2-digit",
     hourCycle: "h23",
   }).formatToParts(now);
-  
+
   // Create a date representing "now" as if it were in local time with tz's display
   const nowAsTzLocal = new Date(
-    parseInt(nowInTz.find(p => p.type === "year").value),
-    parseInt(nowInTz.find(p => p.type === "month").value) - 1,
-    parseInt(nowInTz.find(p => p.type === "day").value),
-    parseInt(nowInTz.find(p => p.type === "hour").value),
-    parseInt(nowInTz.find(p => p.type === "minute").value),
+    parseInt(nowInTz.find((p) => p.type === "year").value),
+    parseInt(nowInTz.find((p) => p.type === "month").value) - 1,
+    parseInt(nowInTz.find((p) => p.type === "day").value),
+    parseInt(nowInTz.find((p) => p.type === "hour").value),
+    parseInt(nowInTz.find((p) => p.type === "minute").value),
     0
   );
-  
+
   // The offset between actual now and the local representation of tz time
   const tzOffsetMs = now.getTime() - nowAsTzLocal.getTime();
-  
+
   // Create the target date in local timezone
   const targetLocal = new Date(year, month - 1, day + dayOffset, h, m, 0);
-  
+
   // Adjust by the timezone offset to get the correct UTC time
   return new Date(targetLocal.getTime() - tzOffsetMs);
 }
@@ -203,9 +199,52 @@ function getTodayKey(tz) {
   return formatter.format(new Date()); // YYYY-MM-DD in given tz
 }
 
-function getLocationId() {
-  const saved = localStorage.getItem("locId");
-  return saved ? Number(saved) : 15;
+function readSelectedMosqueId() {
+  try {
+    return localStorage.getItem(SELECTED_MOSQUE_ID_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
+function writeSelectedMosqueId(id) {
+  try {
+    if (!id) {
+      localStorage.removeItem(SELECTED_MOSQUE_ID_KEY);
+      return;
+    }
+    localStorage.setItem(SELECTED_MOSQUE_ID_KEY, String(id));
+  } catch {
+    // ignore
+  }
+}
+
+function expireLocalStorageDaily(tz) {
+  const todayKey = getTodayKey(tz);
+  try {
+    const last = localStorage.getItem(LOCAL_STORAGE_DAY_KEY);
+    if (last === todayKey) return;
+
+    const keep = new Set([LOCAL_STORAGE_DAY_KEY, SELECTED_MOSQUE_ID_KEY]);
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && !keep.has(k)) keysToRemove.push(k);
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+    localStorage.setItem(LOCAL_STORAGE_DAY_KEY, todayKey);
+  } catch {
+    // ignore
+  }
+}
+
+function getFallbackLocationId() {
+  try {
+    const saved = localStorage.getItem("locId");
+    return saved ? Number(saved) : 15;
+  } catch {
+    return 15;
+  }
 }
 
 async function fetchTimesFromApi(locId) {
@@ -255,6 +294,9 @@ async function getPrayerData(locId, tz) {
 
 function App() {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  // Expire all localStorage keys daily, except the selected masjid UUID.
+  // (Runs every render, but only does work once per day.)
+  expireLocalStorageDaily(tz);
 
   const [clock, setClock] = useState("--:--:--");
   const [gregorianDate, setGregorianDate] = useState({
@@ -282,6 +324,23 @@ function App() {
   const [hijriMonthApi, setHijriMonthApi] = useState("");
   const [config, setConfig] = useState(() => loadPageConfig());
 
+  const [selectedMosqueId, setSelectedMosqueId] = useState(() =>
+    readSelectedMosqueId()
+  );
+  const [selectedMosque, setSelectedMosque] = useState(null);
+  const [mosques, setMosques] = useState([]);
+  const [mosquesLoading, setMosquesLoading] = useState(false);
+  const [mosquesError, setMosquesError] = useState("");
+  const [showMasjidPicker, setShowMasjidPicker] = useState(false);
+  const [pickerMosqueId, setPickerMosqueId] = useState(() =>
+    readSelectedMosqueId()
+  );
+
+  const effectiveFooterText =
+    (selectedMosque?.footerText || "").trim().length > 0
+      ? selectedMosque.footerText.trim()
+      : config.footerText || DEFAULT_FOOTER_TEXT;
+
   const updateClockAndDates = () => {
     const now = currentTimeTZ(tz);
     setClock(fmtTimeWithSeconds(now, tz));
@@ -292,23 +351,28 @@ function App() {
     return now;
   };
 
-  const loadPrayerTimes = useCallback(async () => {
-    const locId = getLocationId();
+  const loadPrayerTimes = useCallback(async (forcedMosque = null) => {
+    const mosque = forcedMosque || selectedMosque;
+    const locId = mosque?.locationId ?? getFallbackLocationId();
     try {
       const data = await getPrayerData(locId, tz);
       let nextPrepared = data.vakat;
 
+      const overrideFajr =
+        (mosque?.fajrTime || "").trim().length > 0 ? mosque.fajrTime.trim() : null;
+      const effectiveFajrTime = overrideFajr || config.fajrTime;
+
       // Initialize Fajr time in config from API if not set yet
-      if (!config.fajrTime && nextPrepared && nextPrepared.length > 0) {
+      if (!effectiveFajrTime && nextPrepared && nextPrepared.length > 0) {
         const nextConfig = {
           ...config,
           fajrTime: nextPrepared[0],
         };
         setConfig(nextConfig);
         savePageConfig(nextConfig);
-      } else if (config.fajrTime && nextPrepared && nextPrepared.length > 0) {
+      } else if (effectiveFajrTime && nextPrepared && nextPrepared.length > 0) {
         // Override Fajr time with configured value
-        nextPrepared = [config.fajrTime, ...nextPrepared.slice(1)];
+        nextPrepared = [effectiveFajrTime, ...nextPrepared.slice(1)];
       }
 
       const nextSchedule = nextPrepared.map((t) => parseHHMM(t, tz));
@@ -352,13 +416,18 @@ function App() {
       setPrepared(null);
       setActivePrayerIndex(-1);
     }
-  }, [tz, config]);
+  }, [tz, config, selectedMosque]);
 
   useEffect(() => {
     // Initial load
     updateClockAndDates();
-    loadPrayerTimes();
   }, []);
+
+  useEffect(() => {
+    // Reload prayer times whenever the effective data source changes
+    // (selected masjid fetched from Supabase, or config reset/updated)
+    loadPrayerTimes();
+  }, [loadPrayerTimes]);
 
   useEffect(() => {
     // Update clock and dates every second
@@ -400,6 +469,15 @@ function App() {
     const msUntilMidnight = nextMidnight.getTime() - now.getTime();
 
     const midnightTimeoutId = setTimeout(async () => {
+      // Expire all localStorage keys except selected masjid uuid.
+      expireLocalStorageDaily(tz);
+      // Reset page config (it lives in localStorage and should expire daily)
+      setConfig(loadPageConfig());
+      // Refresh selected masjid data from Supabase (fajr/footer/location might change)
+      if (selectedMosqueId) {
+        const res = await loadMosqueById(selectedMosqueId);
+        if (res?.mosque) setSelectedMosque(res.mosque);
+      }
       await loadPrayerTimes();
       dailyIntervalId = setInterval(loadPrayerTimes, 24 * 60 * 60 * 1000);
     }, msUntilMidnight);
@@ -410,6 +488,74 @@ function App() {
     };
   }, [loadPrayerTimes]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      setMosquesLoading(true);
+      setMosquesError("");
+      const res = await loadMosquesFromDb();
+      if (cancelled) return;
+      if (res?.error) {
+        setMosquesError(res.error);
+        setMosques([]);
+      } else {
+        setMosques(res.mosques || []);
+      }
+      setMosquesLoading(false);
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    // Fetch the selected masjid record from Supabase whenever UUID changes.
+    let cancelled = false;
+    const run = async () => {
+      if (!selectedMosqueId) {
+        setSelectedMosque(null);
+        return;
+      }
+      const res = await loadMosqueById(selectedMosqueId);
+      if (cancelled) return;
+      if (res?.error) {
+        setSelectedMosque(null);
+      } else {
+        setSelectedMosque(res.mosque || null);
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedMosqueId]);
+
+  useEffect(() => {
+    setPickerMosqueId(selectedMosqueId || "");
+  }, [selectedMosqueId]);
+
+  const applySelectedMasjid = async () => {
+    if (!pickerMosqueId) return;
+    const mosque = mosques.find((m) => m.id === pickerMosqueId);
+    if (!mosque) return;
+    // Persist only UUID; other data should be refetched from Supabase.
+    writeSelectedMosqueId(mosque.id);
+    setSelectedMosqueId(mosque.id);
+    setSelectedMosque(mosque);
+    setShowMasjidPicker(false);
+    await loadPrayerTimes(mosque);
+  };
+
+  const clearSelectedMasjid = async () => {
+    writeSelectedMosqueId("");
+    setSelectedMosqueId("");
+    setSelectedMosque(null);
+    setPickerMosqueId("");
+    setShowMasjidPicker(false);
+    await loadPrayerTimes();
+  };
+
   // Update prayer times display when prepared changes
   useEffect(() => {
     if (prepared) {
@@ -418,7 +564,103 @@ function App() {
   }, [prepared]);
 
   return (
-    <div className="tv-portrait-wrapper bg-dark-background">
+    <div className="tv-portrait-wrapper bg-dark-background relative">
+      {/* Daily masjid selector (Supabase-backed) */}
+      <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+        <button
+          type="button"
+          className="px-3 py-2 rounded-md bg-white/10 text-white text-xs font-semibold hover:bg-white/15"
+          onClick={() => setShowMasjidPicker(true)}
+        >
+          {selectedMosque?.name
+            ? `Masjid: ${selectedMosque.name}`
+            : selectedMosqueId
+              ? "Masjid: (loading...)"
+              : "Select Masjid"}
+        </button>
+        <div className="text-[10px] text-white/70">
+          Selection expires daily
+        </div>
+      </div>
+
+      {showMasjidPicker ? (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center px-4 z-50">
+          <div className="w-full max-w-xl rounded-lg border border-gray-300 bg-white p-5 sm:p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <div className="text-lg sm:text-xl font-bold text-gray-900">
+                  Select Masjid (for today)
+                </div>
+                <div className="text-xs sm:text-sm text-gray-600 mt-1">
+                  This will store <span className="font-mono">location_id</span>,{" "}
+                  <span className="font-mono">fajr_time</span>,{" "}
+                  <span className="font-mono">footer_text</span> in localStorage until midnight.
+                </div>
+              </div>
+              <button
+                type="button"
+                className="text-sm font-semibold text-gray-700 hover:text-gray-900"
+                onClick={() => setShowMasjidPicker(false)}
+              >
+                Close
+              </button>
+            </div>
+
+            {mosquesError ? (
+              <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs sm:text-sm text-red-700">
+                {mosquesError}
+              </div>
+            ) : null}
+
+            <div className="space-y-3">
+              <div className="flex flex-col">
+                <label className="block text-xs sm:text-sm mb-1 text-gray-700">
+                  Masjid
+                </label>
+                <select
+                  className="w-full rounded-md bg-white border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-prayer-green"
+                  value={pickerMosqueId}
+                  onChange={(e) => setPickerMosqueId(e.target.value)}
+                  disabled={mosquesLoading || mosques.length === 0}
+                >
+                  <option value="">
+                    {mosquesLoading
+                      ? "Loading…"
+                      : mosques.length === 0
+                        ? "No masjid found"
+                        : "Choose…"}
+                  </option>
+                  {mosques.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} (loc: {m.locationId})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-900 text-xs sm:text-sm font-semibold hover:bg-gray-50"
+                  onClick={clearSelectedMasjid}
+                  disabled={!selectedMosqueId}
+                >
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-md bg-prayer-green text-white text-xs sm:text-sm font-semibold hover:bg-prayer-green/90 disabled:opacity-60 disabled:cursor-not-allowed"
+                  onClick={applySelectedMasjid}
+                  disabled={!pickerMosqueId}
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="w-full h-full flex">
         {/* Main Card Container */}
         <div className="prayer-card-container w-full h-full">
@@ -428,11 +670,17 @@ function App() {
               <img src="/images/logo.svg" alt="Logo" className="w-14 h-14" />
               <div className="flex flex-col">
                 <div className="flex flex-col text-dark-text">
-                  <p className="font-bold uppercase text-prayer-green" style={{ fontSize: "18px" }}>
+                  <p
+                    className="font-bold uppercase text-prayer-green"
+                    style={{ fontSize: "18px" }}
+                  >
                     ISLAMSKA ZAJEDNICA U BOSNI I HERCEGOVINI
                   </p>
                 </div>
-                <div className="font-normal text-islamic-date mt-1 text-center" style={{ fontSize: "15px" }}>
+                <div
+                  className="font-normal text-islamic-date mt-1 text-center"
+                  style={{ fontSize: "15px" }}
+                >
                   Medžlis Islamske zajednice Breza - Džemat "Mahala"
                 </div>
               </div>
@@ -440,7 +688,10 @@ function App() {
 
             {/* Current Time Display */}
             <div className="rounded-lg border border-light-border p-2 mx-auto w-fit min-w-[240px]">
-              <div className="font-bold tracking-tight text-dark-text text-center" style={{ fontSize: "72px" }}>
+              <div
+                className="font-bold tracking-tight text-dark-text text-center"
+                style={{ fontSize: "72px" }}
+              >
                 {clock}
               </div>
             </div>
@@ -452,17 +703,29 @@ function App() {
               {/* Gregorian Date Box */}
               <div className="rounded-lg border border-light-border bg-transparent p-2 text-center flex-1 max-w-xs">
                 <div className="mb-0 leading-none">
-                  <span className="font-bold text-prayer-green" style={{ fontSize: "54px" }}>
+                  <span
+                    className="font-bold text-prayer-green"
+                    style={{ fontSize: "54px" }}
+                  >
                     {gregorianDate.day}
                   </span>
-                  <span className="font-bold text-prayer-green" style={{ fontSize: "30px" }}>
+                  <span
+                    className="font-bold text-prayer-green"
+                    style={{ fontSize: "30px" }}
+                  >
                     .
                   </span>
-                  <span className="font-bold text-prayer-green" style={{ fontSize: "30px" }}>
+                  <span
+                    className="font-bold text-prayer-green"
+                    style={{ fontSize: "30px" }}
+                  >
                     {gregorianDate.year}
                   </span>
                 </div>
-                <div className="font-bold text-prayer-green" style={{ fontSize: "32px" }}>
+                <div
+                  className="font-bold text-prayer-green"
+                  style={{ fontSize: "32px" }}
+                >
                   {gregorianDate.month}
                 </div>
               </div>
@@ -470,17 +733,29 @@ function App() {
               {/* Islamic Date Box */}
               <div className="rounded-lg border border-light-border bg-transparent p-2 text-center flex-1 max-w-xs">
                 <div className="mb-1 leading-none">
-                  <span className="font-bold text-islamic-date" style={{ fontSize: "54px" }}>
+                  <span
+                    className="font-bold text-islamic-date"
+                    style={{ fontSize: "54px" }}
+                  >
                     {hijriDate.day}
                   </span>
-                  <span className="font-bold text-islamic-date" style={{ fontSize: "30px" }}>
+                  <span
+                    className="font-bold text-islamic-date"
+                    style={{ fontSize: "30px" }}
+                  >
                     .
                   </span>
-                  <span className="font-bold text-islamic-date" style={{ fontSize: "30px" }}>
+                  <span
+                    className="font-bold text-islamic-date"
+                    style={{ fontSize: "30px" }}
+                  >
                     {hijriDate.year}
                   </span>
                 </div>
-                <div className="font-bold text-islamic-date" style={{ fontSize: "32px" }}>
+                <div
+                  className="font-bold text-islamic-date"
+                  style={{ fontSize: "32px" }}
+                >
                   {hijriMonthApi || hijriDate.month}
                 </div>
               </div>
@@ -492,7 +767,10 @@ function App() {
             <div className="rounded-lg overflow-hidden flex flex-col flex-1 min-h-0">
               {/* Title Bar */}
               <div className="bg-prayer-green text-white px-4 py-2 rounded-lg flex-shrink-0">
-                <div className="font-bold text-center uppercase" style={{ fontSize: "24px" }}>
+                <div
+                  className="font-bold text-center uppercase"
+                  style={{ fontSize: "24px" }}
+                >
                   VRIJEME NAMAZA | PRAYER TIMES
                 </div>
               </div>
@@ -554,8 +832,11 @@ function App() {
           </section>
           {/* Footer Section */}
           <footer className="bg-prayer-green text-white px-4 py-2 flex-shrink-0">
-            <p className="text-center leading-tight" style={{ fontSize: "18px" }}>
-              {config.footerText || DEFAULT_FOOTER_TEXT}
+            <p
+              className="text-center leading-tight"
+              style={{ fontSize: "18px" }}
+            >
+              {effectiveFooterText}
             </p>
           </footer>
         </div>

@@ -80,6 +80,18 @@ export async function loadMosques() {
   return { mosques: (data || []).map(mapRowToMosque) };
 }
 
+export async function loadMosqueById(id) {
+  if (!supabase) return { error: supabaseNotReadyError() };
+  const { data, error } = await supabase
+    .from("mosques")
+    .select("id,name,location_id,fajr_time,footer_text,created_at")
+    .eq("id", id)
+    .single();
+
+  if (error) return { error: error.message || "Failed to load mosque" };
+  return { mosque: mapRowToMosque(data) };
+}
+
 export async function createMosque(draft) {
   const normalized = normalizeMosqueDraft(draft);
   if (typeof normalized === "object" && normalized?.error) return normalized;
