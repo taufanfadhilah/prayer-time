@@ -418,7 +418,8 @@ function App() {
   }, [prepared]);
 
   return (
-    <div className="tv-portrait-wrapper bg-dark-background">
+    // <div className="tv-portrait-wrapper bg-dark-background">
+    <div className="bg-dark-background">
       <div className="w-full h-full flex">
         {/* Main Card Container */}
         <div className="prayer-card-container w-full h-full">
@@ -440,7 +441,7 @@ function App() {
 
             {/* Current Time Display */}
             <div className="rounded-lg border border-light-border p-2 mx-auto w-fit min-w-[240px]">
-              <div className="font-bold tracking-tight text-dark-text text-center" style={{ fontSize: "54px" }}>
+              <div className="font-bold tracking-tight text-dark-text text-center" style={{ fontSize: "72px" }}>
                 {clock}
               </div>
             </div>
@@ -451,7 +452,7 @@ function App() {
             <div className="flex flex-row gap-3 justify-center">
               {/* Gregorian Date Box */}
               <div className="rounded-lg border border-light-border bg-transparent p-2 text-center flex-1 max-w-xs">
-                <div className="mb-1">
+                <div className="mb-0 leading-none">
                   <span className="font-bold text-prayer-green" style={{ fontSize: "54px" }}>
                     {gregorianDate.day}
                   </span>
@@ -462,14 +463,14 @@ function App() {
                     {gregorianDate.year}
                   </span>
                 </div>
-                <div className="font-bold text-prayer-green" style={{ fontSize: "27px" }}>
+                <div className="font-bold text-prayer-green" style={{ fontSize: "32px" }}>
                   {gregorianDate.month}
                 </div>
               </div>
 
               {/* Islamic Date Box */}
               <div className="rounded-lg border border-light-border bg-transparent p-2 text-center flex-1 max-w-xs">
-                <div className="mb-1">
+                <div className="mb-1 leading-none">
                   <span className="font-bold text-islamic-date" style={{ fontSize: "54px" }}>
                     {hijriDate.day}
                   </span>
@@ -480,7 +481,7 @@ function App() {
                     {hijriDate.year}
                   </span>
                 </div>
-                <div className="font-bold text-islamic-date" style={{ fontSize: "27px" }}>
+                <div className="font-bold text-islamic-date" style={{ fontSize: "32px" }}>
                   {hijriMonthApi || hijriDate.month}
                 </div>
               </div>
