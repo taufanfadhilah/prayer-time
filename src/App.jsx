@@ -453,16 +453,46 @@ function App() {
 
   useEffect(() => {
     // Ensure data refreshes at (local) midnight and then once per day after that
-    let dailyIntervalId;
+    const RELOAD_FLAG_KEY = "dailyReloadDate";
 
     const now = new Date();
+    const todayKey = getTodayKey(tz);
+    
+    // Check if we've already reloaded today (prevent infinite loop)
+    try {
+      const lastReloadDate = sessionStorage.getItem(RELOAD_FLAG_KEY);
+      if (lastReloadDate === todayKey) {
+        // Already reloaded today, don't set up another reload
+        return;
+      }
+    } catch {
+      // Ignore sessionStorage errors
+    }
+
     const nextMidnight = new Date(now);
     nextMidnight.setDate(now.getDate() + 1);
     nextMidnight.setHours(0, 0, 5, 0); // a few seconds after midnight
 
     const msUntilMidnight = nextMidnight.getTime() - now.getTime();
 
+    // Safety check: don't set timeout if we're already past midnight
+    if (msUntilMidnight <= 0 || msUntilMidnight > 24 * 60 * 60 * 1000) {
+      return;
+    }
+
     const midnightTimeoutId = setTimeout(async () => {
+      // Double-check we haven't already reloaded today (race condition protection)
+      try {
+        const lastReloadDate = sessionStorage.getItem(RELOAD_FLAG_KEY);
+        if (lastReloadDate === todayKey) {
+          return; // Already reloaded, abort
+        }
+        // Mark that we're about to reload today
+        sessionStorage.setItem(RELOAD_FLAG_KEY, todayKey);
+      } catch {
+        // Ignore sessionStorage errors, proceed with reload
+      }
+
       // Expire all localStorage keys except selected masjid uuid.
       expireLocalStorageDaily(tz);
       // Reset page config (it lives in localStorage and should expire daily)
@@ -473,12 +503,13 @@ function App() {
         if (res?.mosque) setSelectedMosque(res.mosque);
       }
       await loadPrayerTimes();
-      dailyIntervalId = setInterval(loadPrayerTimes, 24 * 60 * 60 * 1000);
+      // Reload the page once a day at midnight (without removing localStorage)
+      // This ensures a fresh start each day while preserving selectedMosqueId
+      window.location.reload();
     }, msUntilMidnight);
 
     return () => {
       clearTimeout(midnightTimeoutId);
-      if (dailyIntervalId) clearInterval(dailyIntervalId);
     };
   }, [loadPrayerTimes, selectedMosqueId, tz]);
 
