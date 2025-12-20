@@ -5,7 +5,6 @@ import {
   savePageConfig,
 } from "./pageConfig";
 import { loadMosqueById } from "./mosqueStore";
-import { findLocationNameById } from "./locations";
 
 const API = "https://api.vaktija.ba/vaktija/v1";
 const STORAGE_KEY = "vaktijaCache";
@@ -230,9 +229,9 @@ function expireLocalStorageDaily(tz) {
 function getFallbackLocationId() {
   try {
     const saved = localStorage.getItem("locId");
-    return saved ? Number(saved) : 15;
+    return saved ? Number(saved) : 14;
   } catch {
-    return 15;
+    return 14;
   }
 }
 
@@ -318,14 +317,9 @@ function App() {
   );
   const [selectedMosque, setSelectedMosque] = useState(null);
 
-  const selectedLocationName =
-    selectedMosque?.locationId ? findLocationNameById(selectedMosque.locationId) : "";
-
   const masjidHeaderLine = selectedMosque?.name
-    ? `Medžlis Islamske zajednice${selectedLocationName ? ` ${selectedLocationName}` : ""} - ${selectedMosque.name}`
-    : selectedMosqueId
-      ? "Medžlis Islamske zajednice - Džemat (loading...)"
-      : 'Medžlis Islamske zajednice Breza - Džemat "Mahala"';
+    ? selectedMosque.name
+    : "Medžlis Islamske zajednice - Džemat";
 
   const effectiveFooterText =
     (selectedMosque?.footerText || "").trim().length > 0
@@ -342,72 +336,81 @@ function App() {
     return now;
   };
 
-  const loadPrayerTimes = useCallback(async (forcedMosque = null) => {
-    const mosque = forcedMosque || selectedMosque;
-    const locId = mosque?.locationId ?? getFallbackLocationId();
-    try {
-      const data = await getPrayerData(locId, tz);
-      let nextPrepared = data.vakat;
+  const loadPrayerTimes = useCallback(
+    async (forcedMosque = null) => {
+      const mosque = forcedMosque || selectedMosque;
+      const locId = mosque?.locationId ?? getFallbackLocationId();
+      try {
+        const data = await getPrayerData(locId, tz);
+        let nextPrepared = data.vakat;
 
-      const overrideFajr =
-        (mosque?.fajrTime || "").trim().length > 0 ? mosque.fajrTime.trim() : null;
-      const effectiveFajrTime = overrideFajr || config.fajrTime;
+        const overrideFajr =
+          (mosque?.fajrTime || "").trim().length > 0
+            ? mosque.fajrTime.trim()
+            : null;
+        const effectiveFajrTime = overrideFajr || config.fajrTime;
 
-      // Initialize Fajr time in config from API if not set yet
-      if (!effectiveFajrTime && nextPrepared && nextPrepared.length > 0) {
-        const nextConfig = {
-          ...config,
-          fajrTime: nextPrepared[0],
-        };
-        setConfig(nextConfig);
-        savePageConfig(nextConfig);
-      } else if (effectiveFajrTime && nextPrepared && nextPrepared.length > 0) {
-        // Override Fajr time with configured value
-        nextPrepared = [effectiveFajrTime, ...nextPrepared.slice(1)];
-      }
+        // Initialize Fajr time in config from API if not set yet
+        if (!effectiveFajrTime && nextPrepared && nextPrepared.length > 0) {
+          const nextConfig = {
+            ...config,
+            fajrTime: nextPrepared[0],
+          };
+          setConfig(nextConfig);
+          savePageConfig(nextConfig);
+        } else if (
+          effectiveFajrTime &&
+          nextPrepared &&
+          nextPrepared.length > 0
+        ) {
+          // Override Fajr time with configured value
+          nextPrepared = [effectiveFajrTime, ...nextPrepared.slice(1)];
+        }
 
-      const nextSchedule = nextPrepared.map((t) => parseHHMM(t, tz));
-      setPrepared(nextPrepared);
-      setSchedule(nextSchedule);
-      setStatus(data.lokacija ? `Location: ${data.lokacija}` : "");
+        const nextSchedule = nextPrepared.map((t) => parseHHMM(t, tz));
+        setPrepared(nextPrepared);
+        setSchedule(nextSchedule);
+        setStatus(data.lokacija ? `Location: ${data.lokacija}` : "");
 
-      // Parse Hijri month from API date string, e.g. "25. džumade-l-uhra 1447"
-      if (Array.isArray(data.datum) && data.datum[0]) {
-        const hijriString = data.datum[0];
-        const match = hijriString.match(/^\s*\d+\.\s+(.+)\s+\d+\s*$/);
-        if (match && match[1]) {
-          setHijriMonthApi(match[1]);
+        // Parse Hijri month from API date string, e.g. "25. džumade-l-uhra 1447"
+        if (Array.isArray(data.datum) && data.datum[0]) {
+          const hijriString = data.datum[0];
+          const match = hijriString.match(/^\s*\d+\.\s+(.+)\s+\d+\s*$/);
+          if (match && match[1]) {
+            setHijriMonthApi(match[1]);
+          } else {
+            setHijriMonthApi("");
+          }
         } else {
           setHijriMonthApi("");
         }
-      } else {
-        setHijriMonthApi("");
-      }
 
-      // Update active prayer index using the freshly computed schedule
-      const now = currentTimeTZ(tz);
-      let idx = -1;
-      if (nextSchedule && nextSchedule.length) {
-        // Find the most recent prayer time that has passed
-        // Check from most recent (last) to oldest (first)
-        for (let i = nextSchedule.length - 1; i >= 0; i--) {
-          if (now >= nextSchedule[i]) {
-            idx = i;
-            break;
+        // Update active prayer index using the freshly computed schedule
+        const now = currentTimeTZ(tz);
+        let idx = -1;
+        if (nextSchedule && nextSchedule.length) {
+          // Find the most recent prayer time that has passed
+          // Check from most recent (last) to oldest (first)
+          for (let i = nextSchedule.length - 1; i >= 0; i--) {
+            if (now >= nextSchedule[i]) {
+              idx = i;
+              break;
+            }
           }
+          // If we're after the last prayer of the day (Isya), keep it active until next Fajr
+          // (idx will already be set to the last prayer index, which is correct)
         }
-        // If we're after the last prayer of the day (Isya), keep it active until next Fajr
-        // (idx will already be set to the last prayer index, which is correct)
+        setActivePrayerIndex(idx);
+      } catch (e) {
+        setPrayerTimes(["--:--", "--:--", "--:--", "--:--", "--:--", "--:--"]);
+        setStatus("Unable to load prayer times");
+        setSchedule(null);
+        setPrepared(null);
+        setActivePrayerIndex(-1);
       }
-      setActivePrayerIndex(idx);
-    } catch (e) {
-      setPrayerTimes(["--:--", "--:--", "--:--", "--:--", "--:--", "--:--"]);
-      setStatus("Unable to load prayer times");
-      setSchedule(null);
-      setPrepared(null);
-      setActivePrayerIndex(-1);
-    }
-  }, [tz, config, selectedMosque]);
+    },
+    [tz, config, selectedMosque]
+  );
 
   useEffect(() => {
     // Initial load

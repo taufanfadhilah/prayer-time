@@ -22,7 +22,7 @@ function AdminConfigPage() {
 
   const [editingId, setEditingId] = useState(null);
   const [name, setName] = useState("");
-  const [locationId, setLocationId] = useState(15); // default matches App.jsx default
+  const [locationId, setLocationId] = useState(14); // default matches App.jsx default
   const [fajrTime, setFajrTime] = useState("");
   const [footerText, setFooterText] = useState("");
 
@@ -70,7 +70,7 @@ function AdminConfigPage() {
   const resetForm = () => {
     setEditingId(null);
     setName("");
-    setLocationId(15);
+    setLocationId(14);
     setFajrTime("");
     setFooterText("");
     setError("");
@@ -79,7 +79,7 @@ function AdminConfigPage() {
   const startEdit = (m) => {
     setEditingId(m.id);
     setName(m.name || "");
-    setLocationId(m.locationId || 15);
+    setLocationId(m.locationId || 14);
     setFajrTime(m.fajrTime || "");
     setFooterText(m.footerText || "");
     setError("");
