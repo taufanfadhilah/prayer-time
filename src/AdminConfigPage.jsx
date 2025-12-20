@@ -250,14 +250,14 @@ function AdminConfigPage() {
 
               <div className="flex flex-col">
                 <label className="block text-xs sm:text-sm mb-1 text-gray-700">
-                  Fajr Time (optional, HH:MM)
+                  Fajr Time (optional, H:MM)
                 </label>
                 <input
                   type="text"
                   className="w-full rounded-md bg-white border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-prayer-green"
                   value={fajrTime}
                   onChange={(e) => setFajrTime(e.target.value)}
-                  placeholder="e.g. 05:30"
+                  placeholder="e.g. 5:30"
                 />
                 <p className="mt-1 text-[10px] sm:text-xs text-gray-500">
                   Leave empty to use the time from the daily API response.

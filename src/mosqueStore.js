@@ -6,13 +6,14 @@ export function normalizeFajrTime(input) {
   const v = String(input ?? "").trim();
   if (!v) return null;
   const m = v.match(/^(\d{1,2}):(\d{2})$/);
-  if (!m) return { error: "Fajr time must be HH:MM" };
+  if (!m) return { error: "Fajr time must be H:MM or HH:MM" };
   const hh = Number(m[1]);
   const mm = Number(m[2]);
   if (Number.isNaN(hh) || Number.isNaN(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) {
     return { error: "Fajr time must be a valid 24h time" };
   }
-  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+  // Return without leading zero on hour (e.g., "6:45" instead of "06:45")
+  return `${hh}:${String(mm).padStart(2, "0")}`;
 }
 
 export function normalizeFooterText(input) {

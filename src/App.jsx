@@ -199,6 +199,15 @@ function getTodayKey(tz) {
   return formatter.format(new Date()); // YYYY-MM-DD in given tz
 }
 
+function formatTimeWithoutLeadingZero(timeStr) {
+  if (!timeStr || timeStr === "--:--") return timeStr;
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return timeStr;
+  const hour = Number(match[1]);
+  const minute = match[2];
+  return `${hour}:${minute}`;
+}
+
 function readSelectedMosqueId() {
   try {
     return localStorage.getItem(SELECTED_MOSQUE_ID_KEY) || "";
@@ -368,7 +377,9 @@ function App() {
         }
 
         const nextSchedule = nextPrepared.map((t) => parseHHMM(t, tz));
-        setPrepared(nextPrepared);
+        // Format times to remove leading zeros from hours (e.g., "06:45" -> "6:45")
+        const formattedPrepared = nextPrepared.map(formatTimeWithoutLeadingZero);
+        setPrepared(formattedPrepared);
         setSchedule(nextSchedule);
         setStatus(data.lokacija ? `Location: ${data.lokacija}` : "");
 
