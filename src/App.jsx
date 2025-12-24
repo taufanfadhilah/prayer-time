@@ -244,11 +244,26 @@ function getFallbackLocationId() {
   }
 }
 
-async function fetchTimesFromApi(locId) {
+async function fetchTimesFromApi(locId, retries = 3, delayMs = 1000) {
   const url = `${API}/${locId}`;
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+  
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      return await res.json();
+    } catch (error) {
+      // If this was the last attempt, throw the error
+      if (attempt === retries) {
+        throw error;
+      }
+      // Wait before retrying (exponential backoff: 1s, 2s, 4s)
+      const waitTime = delayMs * Math.pow(2, attempt);
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
+    }
+  }
 }
 
 async function getPrayerData(locId, tz) {
