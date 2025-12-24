@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { DEFAULT_FOOTER_TEXT, savePageConfig } from "./pageConfig";
+import { savePageConfig } from "./pageConfig";
 import { LOCATIONS, findLocationNameById } from "./locations";
 import { logoutAdmin } from "./adminAuth";
 import {
@@ -129,7 +129,7 @@ function AdminConfigPage() {
     }
 
     const nextFooterText =
-      (m.footerText || "").trim().length > 0 ? m.footerText.trim() : DEFAULT_FOOTER_TEXT;
+      (m.footerText || "").trim().length > 0 ? m.footerText.trim() : null;
     const nextFajrTime = (m.fajrTime || "").trim().length > 0 ? m.fajrTime.trim() : null;
 
     savePageConfig({

@@ -1,9 +1,9 @@
-import { DEFAULT_FOOTER_TEXT } from "./pageConfig";
 import { expireLocalStorageDaily } from "./utils/storageUtils";
 import { useClock } from "./hooks/useClock";
 import { useMosque } from "./hooks/useMosque";
 import { usePageConfig } from "./hooks/usePageConfig";
 import { usePrayerTimes } from "./hooks/usePrayerTimes";
+import { useNextPrayerCountdown } from "./hooks/useNextPrayerCountdown";
 import Header from "./components/Header";
 import DateDisplay from "./components/DateDisplay";
 import PrayerTimesList from "./components/PrayerTimesList";
@@ -18,7 +18,7 @@ function App() {
   const { clock, gregorianDate, hijriDate } = useClock(tz);
   const { selectedMosque, selectedMosqueId, setSelectedMosque } = useMosque();
   const { config, setConfig } = usePageConfig();
-  const { prayerTimes, activePrayerIndex, hijriMonthApi } = usePrayerTimes(
+  const { prayerTimes, activePrayerIndex, hijriMonthApi, schedule } = usePrayerTimes(
     tz,
     selectedMosque,
     config,
@@ -26,15 +26,24 @@ function App() {
     selectedMosqueId,
     setSelectedMosque
   );
+  const { countdown } = useNextPrayerCountdown(schedule, tz);
 
   const masjidHeaderLine = selectedMosque?.name
     ? selectedMosque.name
     : "Medžlis Islamske zajednice - Džemat";
 
-  const effectiveFooterText =
-    (selectedMosque?.footerText || "").trim().length > 0
-      ? selectedMosque.footerText.trim()
-      : config.footerText || DEFAULT_FOOTER_TEXT;
+  // Determine footer content: use custom footer if set, otherwise show countdown timer
+  const mosqueFooterText = (selectedMosque?.footerText || "").trim();
+  const configFooterText = (config.footerText || "").trim();
+  
+  // Check if user has explicitly set a custom footer
+  const hasMosqueFooter = mosqueFooterText.length > 0;
+  const hasConfigFooter = configFooterText.length > 0;
+  const hasCustomFooter = hasMosqueFooter || hasConfigFooter;
+  
+  const effectiveFooterText = hasCustomFooter
+    ? (mosqueFooterText || configFooterText)
+    : null; // null means show countdown timer
 
   return (
     <div className="tv-portrait-wrapper bg-dark-background">
@@ -51,7 +60,7 @@ function App() {
             prayerTimes={prayerTimes}
             activePrayerIndex={activePrayerIndex}
           />
-          <Footer footerText={effectiveFooterText} />
+          <Footer footerText={effectiveFooterText} countdown={countdown} />
         </div>
       </div>
     </div>

@@ -4,7 +4,6 @@ import { parseHHMM, currentTimeTZ, formatTimeWithoutLeadingZero } from "../utils
 import { getFallbackLocationId } from "../utils/storageUtils";
 import { getTodayKey } from "../utils/dateUtils";
 import { loadPageConfig, savePageConfig } from "../pageConfig";
-import { DEFAULT_FOOTER_TEXT } from "../pageConfig";
 import { expireLocalStorageDaily } from "../utils/storageUtils";
 import { loadMosqueById } from "../mosqueStore";
 
@@ -206,6 +205,7 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
     activePrayerIndex,
     status,
     hijriMonthApi,
+    schedule,
   };
 }
 
