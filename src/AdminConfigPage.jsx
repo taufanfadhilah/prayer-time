@@ -349,7 +349,7 @@ function AdminConfigPage() {
                               <span className="font-semibold">fajr</span>:{" "}
                               {m.fajrTime || <span className="text-gray-500">API</span>}
                             </div>
-                            <div className="truncate">
+                            <div className="whitespace-pre-line">
                               <span className="font-semibold">footer</span>:{" "}
                               {m.footerText ? (
                                 m.footerText
