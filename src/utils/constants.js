@@ -6,7 +6,7 @@ export const SELECTED_MOSQUE_ID_KEY = "selectedMosqueId";
 export const labels = {
   en: ["Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"],
   bs: [
-    "Sabah u džamiji",
+    "Zora",
     "Izlazak sunca",
     "Podne",
     "Ikindija",

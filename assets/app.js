@@ -2,8 +2,8 @@ const API = "https://api.vaktija.ba/vaktija/v1";
 
 const labels = {
   en: ["Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"],
-  bs: ["Sabah u džamiji", "Izlazak sunca", "Podne", "Ikindija", "Akšam", "Jacija"],
-  ar: ["الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء"]
+  bs: ["Zora", "Izlazak sunca", "Podne", "Ikindija", "Akšam", "Jacija"],
+  ar: ["الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء"],
 };
 
 const hijriMonths = [
