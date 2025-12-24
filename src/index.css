@@ -32,7 +32,7 @@ body {
   min-height: 100vw;
   max-height: 100vw;
   transform-origin: center center;
-  transform: translate(-50%, -50%) rotate(90deg);
+  transform: translate(-50%, -50%) rotate(270deg);
   overflow: hidden;
   /* On 32-inch TV (1920x1080 landscape), this creates a 1080x1920 portrait display */
 }
