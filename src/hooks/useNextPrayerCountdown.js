@@ -30,9 +30,11 @@ export function useNextPrayerCountdown(schedule, tz) {
       
       // If no prayer time found for today, next prayer is tomorrow's Fajr (first prayer)
       if (!nextPrayerTime && schedule.length > 0 && schedule[0]) {
-        // Create tomorrow's Fajr time
-        const tomorrowFajr = new Date(schedule[0]);
-        tomorrowFajr.setDate(tomorrowFajr.getDate() + 1);
+        // Create tomorrow's Fajr time by adding exactly 24 hours (86400000 ms)
+        // This avoids timezone/DST issues that can occur with setDate
+        const tomorrowFajr = new Date(schedule[0].getTime() + 24 * 60 * 60 * 1000);
+        // Ensure seconds and milliseconds are exactly 0 for precision
+        tomorrowFajr.setSeconds(0, 0);
         nextPrayerTime = tomorrowFajr;
         nextIndex = 0;
       }
@@ -46,6 +48,7 @@ export function useNextPrayerCountdown(schedule, tz) {
           return;
         }
 
+        // Calculate total seconds, rounding down to show remaining time accurately
         const totalSeconds = Math.floor(diffMs / 1000);
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
