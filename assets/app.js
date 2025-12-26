@@ -2,7 +2,7 @@ const API = "https://api.vaktija.ba/vaktija/v1";
 
 const labels = {
   en: ["Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"],
-  bs: ["Zora", "Izlazak sunca", "Podne", "Ikindija", "Akšam", "Jacija"],
+  bs: ["Sabah u dzamiji", "Izlazak sunca", "Podne", "Ikindija", "Akšam", "Jacija"],
   ar: ["الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء"],
 };
 
@@ -151,7 +151,8 @@ function renderGrid(times, activeIdx, hasCustomFajrTime = false) {
   grid.innerHTML = "";
   times.forEach((t, i) => {
     const isActive = activeIdx === i;
-    const fajrLabel = i === 0 ? (hasCustomFajrTime ? "Zora" : "Sabah u dzamiji") : labels.bs[i];
+    const fajrLabel =
+      i === 0 ? (hasCustomFajrTime ? "Sabah u dzamiji" : "Zora") : labels.bs[i];
     const row = document.createElement("div");
     row.className = `flex flex-row items-center py-4 sm:py-5 px-4 sm:px-6`;
     

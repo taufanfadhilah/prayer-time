@@ -31,7 +31,11 @@ export default function PrayerTimesList({ prayerTimes, activePrayerIndex, hasCus
                       } leading-tight`}
                       style={{ fontSize: "36px" }}
                     >
-                      {i === 0 ? (hasCustomFajrTime ? "Zora" : "Sabah u dzamiji") : labels.bs[i]}
+                      {i === 0
+                        ? hasCustomFajrTime
+                          ? "Sabah u dzamiji"
+                          : "Zora"
+                        : labels.bs[i]}
                     </div>
                   </div>
                   <div className="flex-1 text-center px-2">
