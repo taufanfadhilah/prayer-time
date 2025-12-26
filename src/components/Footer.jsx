@@ -1,6 +1,6 @@
 export default function Footer({ footerText, countdown }) {
   return (
-    <footer className="bg-prayer-green text-white px-4 py-2 flex-shrink-0">
+    <footer className="bg-prayer-green text-white px-4 py-2 flex-shrink-0 min-h-[90px] flex items-center justify-center">
       {footerText ? (
         <p
           className="text-center leading-tight whitespace-pre-line"
@@ -9,7 +9,7 @@ export default function Footer({ footerText, countdown }) {
           {footerText}
         </p>
       ) : (
-        <div className="text-center leading-tight flex items-center justify-center gap-2">
+        <div className="text-center leading-tight flex items-center justify-center gap-2 w-full">
           <span style={{ fontSize: "27px" }}>Naredni ezan za:</span>
           <span
             className="font-bold tabular-nums"
