@@ -18,7 +18,7 @@ function App() {
   const { clock, gregorianDate, hijriDate } = useClock(tz);
   const { selectedMosque, selectedMosqueId, setSelectedMosque } = useMosque();
   const { config, setConfig } = usePageConfig();
-  const { prayerTimes, activePrayerIndex, hijriMonthApi, schedule } = usePrayerTimes(
+  const { prayerTimes, activePrayerIndex, hijriMonthApi, schedule, hasCustomFajrTime } = usePrayerTimes(
     tz,
     selectedMosque,
     config,
@@ -59,6 +59,7 @@ function App() {
           <PrayerTimesList
             prayerTimes={prayerTimes}
             activePrayerIndex={activePrayerIndex}
+            hasCustomFajrTime={hasCustomFajrTime}
           />
           <Footer footerText={effectiveFooterText} countdown={countdown} />
         </div>

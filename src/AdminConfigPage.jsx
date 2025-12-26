@@ -131,10 +131,13 @@ function AdminConfigPage() {
     const nextFooterText =
       (m.footerText || "").trim().length > 0 ? m.footerText.trim() : null;
     const nextFajrTime = (m.fajrTime || "").trim().length > 0 ? m.fajrTime.trim() : null;
+    // If mosque has fajrTime, it's custom; otherwise it's not
+    const isFajrTimeCustom = !!nextFajrTime;
 
     savePageConfig({
       footerText: nextFooterText,
       fajrTime: nextFajrTime,
+      isFajrTimeCustom: isFajrTimeCustom,
     });
 
     setActiveMosqueId(m.id);

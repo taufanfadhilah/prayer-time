@@ -21,6 +21,7 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
   const [schedule, setSchedule] = useState(null);
   const [prepared, setPrepared] = useState(null);
   const [hijriMonthApi, setHijriMonthApi] = useState("");
+  const [hasCustomFajrTime, setHasCustomFajrTime] = useState(false);
 
   const loadPrayerTimes = useCallback(
     async (forcedMosque = null) => {
@@ -35,15 +36,34 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
             ? mosque.fajrTime.trim()
             : null;
         const effectiveFajrTime = overrideFajr || config.fajrTime;
+        const apiFajrTime = nextPrepared && nextPrepared.length > 0 ? nextPrepared[0] : null;
+
+        // Determine if fajrTime is custom:
+        // - If mosque has fajrTime, it's definitely custom
+        // - If config has isFajrTimeCustom flag set to true, it's custom
+        // - Otherwise (null or auto-initialized from API), it's not custom
+        let isCustomFajr = false;
+        
+        if (overrideFajr) {
+          // Mosque override is always custom
+          isCustomFajr = true;
+        } else if (config.isFajrTimeCustom === true) {
+          // Config explicitly marks fajrTime as custom
+          isCustomFajr = true;
+        }
+        // Otherwise isCustomFajr remains false (not custom)
 
         // Initialize Fajr time in config from API if not set yet
         if (!effectiveFajrTime && nextPrepared && nextPrepared.length > 0) {
           const nextConfig = {
             ...config,
             fajrTime: nextPrepared[0],
+            isFajrTimeCustom: false, // Mark as not custom since it's from API
           };
           setConfig(nextConfig);
           savePageConfig(nextConfig);
+          // After initializing from API, it's not custom
+          isCustomFajr = false;
         } else if (
           effectiveFajrTime &&
           nextPrepared &&
@@ -52,6 +72,8 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
           // Override Fajr time with configured value
           nextPrepared = [effectiveFajrTime, ...nextPrepared.slice(1)];
         }
+        
+        setHasCustomFajrTime(isCustomFajr);
 
         const nextSchedule = nextPrepared.map((t) => parseHHMM(t, tz));
         // Format times to remove leading zeros from hours (e.g., "06:45" -> "6:45")
@@ -206,6 +228,7 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
     status,
     hijriMonthApi,
     schedule,
+    hasCustomFajrTime,
   };
 }
 

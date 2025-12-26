@@ -146,18 +146,19 @@ async function fetchTimes(locId) {
   return res.json();
 }
 
-function renderGrid(times, activeIdx) {
+function renderGrid(times, activeIdx, hasCustomFajrTime = false) {
   const grid = document.getElementById("grid");
   grid.innerHTML = "";
   times.forEach((t, i) => {
     const isActive = activeIdx === i;
+    const fajrLabel = i === 0 ? (hasCustomFajrTime ? "Zora" : "Sabah u dzamiji") : labels.bs[i];
     const row = document.createElement("div");
     row.className = `flex flex-row items-center py-4 sm:py-5 px-4 sm:px-6`;
     
     row.innerHTML = `
       <div class="flex-1 text-left pr-4">
         <div class="font-medium ${isActive ? "text-prayer-green" : "text-dark-text"} leading-tight" style="font-size: 31.5px;">
-          ${labels.bs[i]}
+          ${fajrLabel}
         </div>
       </div>
       <div class="flex-1 text-center px-2 sm:px-4">
@@ -197,20 +198,26 @@ async function main() {
     try {
       const data = await fetchTimes(locId);
       const prepared = data.vakat;
+      // Check if there's a custom fajrTime (from localStorage or config)
+      // For now, since there's no custom fajrTime logic, this will always be false
+      const customFajrTime = localStorage.getItem("customFajrTime");
+      const hasCustomFajrTime = customFajrTime && customFajrTime.trim().length > 0;
       const schedule = prepared.map((t) => parseHHMM(t, tz));
       let idx = -1;
       const now = currentTimeTZ(tz);
       for (let i = schedule.length - 1; i >= 0; i--) if (now >= schedule[i]) { idx = i; break; }
-      renderGrid(prepared, idx);
+      renderGrid(prepared, idx, hasCustomFajrTime);
       document.getElementById("status").textContent = data.lokacija ? `Location: ${data.lokacija}` : "";
       // cache schedule for countdown calculation
       window.__schedule = schedule;
       window.__prepared = prepared;
+      window.__hasCustomFajrTime = hasCustomFajrTime;
     } catch (e) {
-      renderGrid(["--:--","--:--","--:--","--:--","--:--","--:--"], -1);
+      renderGrid(["--:--","--:--","--:--","--:--","--:--","--:--"], -1, false);
       document.getElementById("status").textContent = "Unable to load prayer times";
       window.__schedule = null;
       window.__prepared = null;
+      window.__hasCustomFajrTime = false;
     }
   }
 
@@ -247,7 +254,7 @@ async function main() {
       }
       if (idx !== window.__lastIdx) {
         window.__lastIdx = idx;
-        renderGrid(window.__prepared, idx);
+        renderGrid(window.__prepared, idx, window.__hasCustomFajrTime || false);
       }
     }
   }, 1000);

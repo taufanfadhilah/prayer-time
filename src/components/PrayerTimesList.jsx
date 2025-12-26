@@ -1,6 +1,6 @@
 import { labels } from "../utils/constants";
 
-export default function PrayerTimesList({ prayerTimes, activePrayerIndex }) {
+export default function PrayerTimesList({ prayerTimes, activePrayerIndex, hasCustomFajrTime }) {
   return (
     <section className="mb-3 flex-1 min-h-0 flex flex-col">
       <div className="rounded-lg overflow-hidden flex flex-col flex-1 min-h-0">
@@ -31,7 +31,7 @@ export default function PrayerTimesList({ prayerTimes, activePrayerIndex }) {
                       } leading-tight`}
                       style={{ fontSize: "36px" }}
                     >
-                      {labels.bs[i]}
+                      {i === 0 ? (hasCustomFajrTime ? "Zora" : "Sabah u dzamiji") : labels.bs[i]}
                     </div>
                   </div>
                   <div className="flex-1 text-center px-2">
