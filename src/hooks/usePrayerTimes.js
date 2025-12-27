@@ -20,6 +20,7 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
   const [status, setStatus] = useState("");
   const [schedule, setSchedule] = useState(null);
   const [prepared, setPrepared] = useState(null);
+  const [preparedTimesRaw, setPreparedTimesRaw] = useState(null); // Store original times before formatting
   const [hijriMonthApi, setHijriMonthApi] = useState("");
   const [hasCustomFajrTime, setHasCustomFajrTime] = useState(false);
 
@@ -79,6 +80,7 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
         // Format times to remove leading zeros from hours (e.g., "06:45" -> "6:45")
         const formattedPrepared = nextPrepared.map(formatTimeWithoutLeadingZero);
         setPrepared(formattedPrepared);
+        setPreparedTimesRaw(nextPrepared); // Store original times for countdown calculation
         setSchedule(nextSchedule);
         setStatus(data.lokacija ? `Location: ${data.lokacija}` : "");
 
@@ -229,6 +231,7 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
     hijriMonthApi,
     schedule,
     hasCustomFajrTime,
+    preparedTimes: preparedTimesRaw, // Pass the original HH:MM time strings (before formatting) for countdown calculation
   };
 }
 

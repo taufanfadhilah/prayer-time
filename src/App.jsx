@@ -18,7 +18,7 @@ function App() {
   const { clock, gregorianDate, hijriDate } = useClock(tz);
   const { selectedMosque, selectedMosqueId, setSelectedMosque } = useMosque();
   const { config, setConfig } = usePageConfig();
-  const { prayerTimes, activePrayerIndex, hijriMonthApi, schedule, hasCustomFajrTime } = usePrayerTimes(
+  const { prayerTimes, activePrayerIndex, hijriMonthApi, schedule, hasCustomFajrTime, preparedTimes } = usePrayerTimes(
     tz,
     selectedMosque,
     config,
@@ -26,7 +26,7 @@ function App() {
     selectedMosqueId,
     setSelectedMosque
   );
-  const { countdown } = useNextPrayerCountdown(schedule, tz);
+  const { countdown } = useNextPrayerCountdown(schedule, tz, preparedTimes);
 
   const masjidHeaderLine = selectedMosque?.name
     ? selectedMosque.name
