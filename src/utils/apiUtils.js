@@ -26,7 +26,7 @@ export async function fetchTimesFromApi(locId, retries = 3, delayMs = 1000) {
 export async function getPrayerData(locId, tz) {
   const todayKey = getTodayKey(tz);
 
-  // Try read from cache
+  // Try read from cache for today
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -45,19 +45,39 @@ export async function getPrayerData(locId, tz) {
   }
 
   // Fallback: fetch from API and store
-  const data = await fetchTimesFromApi(locId);
   try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        date: todayKey,
-        locId,
-        data,
-      })
-    );
-  } catch {
-    // Ignore storage errors, we still return fresh data
+    const data = await fetchTimesFromApi(locId);
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          date: todayKey,
+          locId,
+          data,
+        })
+      );
+    } catch {
+      // Ignore storage errors, we still return fresh data
+    }
+    return data;
+  } catch (error) {
+    // If API fails, try to use yesterday's data as fallback
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // Use yesterday's data even if date doesn't match, as long as locId matches
+        if (parsed && parsed.locId === locId && parsed.data) {
+          console.warn('Using cached prayer times as API is unavailable:', error);
+          return parsed.data;
+        }
+      }
+    } catch {
+      // Ignore cache errors
+    }
+    
+    // If no cache available, throw the error
+    throw error;
   }
-  return data;
 }
 
