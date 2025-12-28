@@ -34,6 +34,7 @@ export function parseHHMM(hhmm, tz, dayOffset = 0) {
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
     hourCycle: "h23",
   }).formatToParts(now);
 
@@ -44,7 +45,7 @@ export function parseHHMM(hhmm, tz, dayOffset = 0) {
     parseInt(nowInTz.find((p) => p.type === "day").value),
     parseInt(nowInTz.find((p) => p.type === "hour").value),
     parseInt(nowInTz.find((p) => p.type === "minute").value),
-    0
+    parseInt(nowInTz.find((p) => p.type === "second").value)
   );
 
   // The offset between actual now and the local representation of tz time
