@@ -50,16 +50,11 @@ export function parseHHMM(hhmm, tz, dayOffset = 0) {
   // The offset between actual now and the local representation of tz time
   const tzOffsetMs = now.getTime() - nowAsTzLocal.getTime();
 
-  // Create the target date in local timezone with seconds and milliseconds set to 0
-  const targetLocal = new Date(year, month - 1, day + dayOffset, h, m, 0, 0);
+  // Create the target date in local timezone
+  const targetLocal = new Date(year, month - 1, day + dayOffset, h, m, 0);
 
   // Adjust by the timezone offset to get the correct UTC time
-  const result = new Date(targetLocal.getTime() - tzOffsetMs);
-  
-  // Ensure seconds and milliseconds are exactly 0 for precision
-  result.setSeconds(0, 0);
-  
-  return result;
+  return new Date(targetLocal.getTime() - tzOffsetMs);
 }
 
 export function currentTimeTZ(tz) {

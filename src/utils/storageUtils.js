@@ -1,4 +1,4 @@
-import { LOCAL_STORAGE_DAY_KEY, SELECTED_MOSQUE_ID_KEY, STORAGE_KEY } from "./constants";
+import { LOCAL_STORAGE_DAY_KEY, SELECTED_MOSQUE_ID_KEY } from "./constants";
 import { getTodayKey } from "./dateUtils";
 
 export function readSelectedMosqueId() {
@@ -15,8 +15,7 @@ export function expireLocalStorageDaily(tz) {
     const last = localStorage.getItem(LOCAL_STORAGE_DAY_KEY);
     if (last === todayKey) return;
 
-    // Keep these keys: today marker, selected mosque ID, and prayer cache (for fallback)
-    const keep = new Set([LOCAL_STORAGE_DAY_KEY, SELECTED_MOSQUE_ID_KEY, STORAGE_KEY]);
+    const keep = new Set([LOCAL_STORAGE_DAY_KEY, SELECTED_MOSQUE_ID_KEY]);
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);

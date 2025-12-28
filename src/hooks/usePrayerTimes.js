@@ -20,10 +20,8 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
   const [status, setStatus] = useState("");
   const [schedule, setSchedule] = useState(null);
   const [prepared, setPrepared] = useState(null);
-  const [preparedTimesRaw, setPreparedTimesRaw] = useState(null); // Store original times before formatting
   const [hijriMonthApi, setHijriMonthApi] = useState("");
   const [hasCustomFajrTime, setHasCustomFajrTime] = useState(false);
-  const [isUsingFallback, setIsUsingFallback] = useState(false); // Track if we're using cached fallback data
 
   const loadPrayerTimes = useCallback(
     async (forcedMosque = null) => {
@@ -32,9 +30,6 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
       try {
         const data = await getPrayerData(locId, tz);
         let nextPrepared = data.vakat;
-
-        // Successfully fetched data, clear fallback flag
-        setIsUsingFallback(false);
 
         const overrideFajr =
           (mosque?.fajrTime || "").trim().length > 0
@@ -84,7 +79,6 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
         // Format times to remove leading zeros from hours (e.g., "06:45" -> "6:45")
         const formattedPrepared = nextPrepared.map(formatTimeWithoutLeadingZero);
         setPrepared(formattedPrepared);
-        setPreparedTimesRaw(nextPrepared); // Store original times for countdown calculation
         setSchedule(nextSchedule);
         setStatus(data.lokacija ? `Location: ${data.lokacija}` : "");
 
@@ -118,24 +112,14 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
         }
         setActivePrayerIndex(idx);
       } catch (e) {
-        console.error('Failed to load prayer times:', e);
-        // Mark that we're using fallback data
-        setIsUsingFallback(true);
-        // Don't clear the prayer times on error - keep showing the old ones
-        // Only update the status to indicate there's an issue
-        setStatus("Using cached prayer times (API unavailable)");
-        // If we have no prayer times at all (initial load failure), show placeholders
-        if (!prepared || prepared.length === 0) {
-          setPrayerTimes(["--:--", "--:--", "--:--", "--:--", "--:--", "--:--"]);
-          setSchedule(null);
-          setPrepared(null);
-          setPreparedTimesRaw(null);
-          setActivePrayerIndex(-1);
-        }
-        // Otherwise, keep the existing prayer times displayed
+        setPrayerTimes(["--:--", "--:--", "--:--", "--:--", "--:--", "--:--"]);
+        setStatus("Unable to load prayer times");
+        setSchedule(null);
+        setPrepared(null);
+        setActivePrayerIndex(-1);
       }
     },
-    [tz, config, selectedMosque, setConfig, prepared]
+    [tz, config, selectedMosque, setConfig]
   );
 
   useEffect(() => {
@@ -168,21 +152,6 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
       };
     }
   }, [schedule, tz]);
-
-  useEffect(() => {
-    // Retry fetching prayer times every 30 seconds if we're using fallback data
-    if (isUsingFallback) {
-      console.log('Using fallback data, will retry API in 30 seconds...');
-      const retryInterval = setInterval(() => {
-        console.log('Retrying API fetch...');
-        loadPrayerTimes();
-      }, 30000); // 30 seconds
-
-      return () => {
-        clearInterval(retryInterval);
-      };
-    }
-  }, [isUsingFallback, loadPrayerTimes]);
 
   useEffect(() => {
     // Ensure data refreshes at (local) midnight and then once per day after that
@@ -260,7 +229,6 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
     hijriMonthApi,
     schedule,
     hasCustomFajrTime,
-    preparedTimes: preparedTimesRaw, // Pass the original HH:MM time strings (before formatting) for countdown calculation
   };
 }
 

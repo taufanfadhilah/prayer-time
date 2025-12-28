@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { currentTimeTZ, parseHHMM } from "../utils/timeUtils";
+import { currentTimeTZ } from "../utils/timeUtils";
 
-export function useNextPrayerCountdown(schedule, tz, preparedTimes = null) {
+export function useNextPrayerCountdown(schedule, tz) {
   const [countdown, setCountdown] = useState("--:--:--");
   const [nextPrayerIndex, setNextPrayerIndex] = useState(-1);
 
@@ -30,23 +30,16 @@ export function useNextPrayerCountdown(schedule, tz, preparedTimes = null) {
       
       // If no prayer time found for today, next prayer is tomorrow's Fajr (first prayer)
       if (!nextPrayerTime && schedule.length > 0 && schedule[0]) {
-        // Create tomorrow's Fajr time using parseHHMM with dayOffset=1
-        // This ensures it's created the same way as the schedule times, accounting for timezone correctly
-        if (preparedTimes && preparedTimes.length > 0 && preparedTimes[0]) {
-          // Use the time string (HH:MM) to create tomorrow's Fajr with dayOffset=1
-          nextPrayerTime = parseHHMM(preparedTimes[0], tz, 1);
-          nextIndex = 0;
-        } else {
-          // Fallback: add 24 hours if we don't have the time string
-          const tomorrowFajr = new Date(schedule[0].getTime() + 24 * 60 * 60 * 1000);
-          tomorrowFajr.setSeconds(0, 0);
-          nextPrayerTime = tomorrowFajr;
-          nextIndex = 0;
-        }
+        // Create tomorrow's Fajr time by adding exactly 24 hours (86400000 ms)
+        // This avoids timezone/DST issues that can occur with setDate
+        const tomorrowFajr = new Date(schedule[0].getTime() + 24 * 60 * 60 * 1000);
+        // Ensure seconds and milliseconds are exactly 0 for precision
+        tomorrowFajr.setSeconds(0, 0);
+        nextPrayerTime = tomorrowFajr;
+        nextIndex = 0;
       }
 
       if (nextPrayerTime) {
-        // Get the difference in milliseconds
         const diffMs = nextPrayerTime.getTime() - now.getTime();
         
         if (diffMs <= 0) {
@@ -55,8 +48,7 @@ export function useNextPrayerCountdown(schedule, tz, preparedTimes = null) {
           return;
         }
 
-        // Calculate total seconds remaining
-        // Use Math.floor to show actual remaining time (not rounded up)
+        // Calculate total seconds, rounding down to show remaining time accurately
         const totalSeconds = Math.floor(diffMs / 1000);
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -80,7 +72,7 @@ export function useNextPrayerCountdown(schedule, tz, preparedTimes = null) {
     return () => {
       clearInterval(interval);
     };
-  }, [schedule, tz, preparedTimes]);
+  }, [schedule, tz]);
 
   return { countdown, nextPrayerIndex };
 }
