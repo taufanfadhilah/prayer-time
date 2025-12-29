@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { getPrayerData } from "../utils/apiUtils";
 import { parseHHMM, currentTimeTZ, formatTimeWithoutLeadingZero } from "../utils/timeUtils";
 import { getFallbackLocationId } from "../utils/storageUtils";
@@ -22,6 +22,9 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
   const [prepared, setPrepared] = useState(null);
   const [hijriMonthApi, setHijriMonthApi] = useState("");
   const [hasCustomFajrTime, setHasCustomFajrTime] = useState(false);
+
+  // Use ref to track if we have data - allows error handler to check without causing re-renders
+  const hasPreparedDataRef = useRef(false);
 
   const loadPrayerTimes = useCallback(
     async (forcedMosque = null) => {
@@ -79,6 +82,7 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
         // Format times to remove leading zeros from hours (e.g., "06:45" -> "6:45")
         const formattedPrepared = nextPrepared.map(formatTimeWithoutLeadingZero);
         setPrepared(formattedPrepared);
+        hasPreparedDataRef.current = true; // Mark that we have valid data
         setSchedule(nextSchedule);
         setStatus(data.lokacija ? `Location: ${data.lokacija}` : "");
 
@@ -112,11 +116,17 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
         }
         setActivePrayerIndex(idx);
       } catch (e) {
-        setPrayerTimes(["--:--", "--:--", "--:--", "--:--", "--:--", "--:--"]);
-        setStatus("Unable to load prayer times");
-        setSchedule(null);
-        setPrepared(null);
-        setActivePrayerIndex(-1);
+        console.error("Failed to load prayer times:", e);
+        // Only clear data if we don't already have valid prayer times displayed
+        // This prevents showing empty times when API fails but we have cached data
+        if (!hasPreparedDataRef.current) {
+          setPrayerTimes(["--:--", "--:--", "--:--", "--:--", "--:--", "--:--"]);
+          setSchedule(null);
+          setPrepared(null);
+          setActivePrayerIndex(-1);
+        }
+        // Update status to indicate there was an issue
+        setStatus("Using cached data (API unavailable)");
       }
     },
     [tz, config, selectedMosque, setConfig]
@@ -158,12 +168,12 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
     const RELOAD_FLAG_KEY = "dailyReloadDate";
 
     const now = new Date();
-    const todayKey = getTodayKey(tz);
-    
+    const currentTodayKey = getTodayKey(tz);
+
     // Check if we've already reloaded today (prevent infinite loop)
     try {
       const lastReloadDate = sessionStorage.getItem(RELOAD_FLAG_KEY);
-      if (lastReloadDate === todayKey) {
+      if (lastReloadDate === currentTodayKey) {
         // Already reloaded today, don't set up another reload
         return;
       }
@@ -183,19 +193,20 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
     }
 
     const midnightTimeoutId = setTimeout(async () => {
-      // Double-check we haven't already reloaded today (race condition protection)
+      // Get fresh todayKey at midnight (not the stale closure value)
+      const newDayKey = getTodayKey(tz);
+
+      // Double-check we haven't already reloaded for this new day
       try {
         const lastReloadDate = sessionStorage.getItem(RELOAD_FLAG_KEY);
-        if (lastReloadDate === todayKey) {
-          return; // Already reloaded, abort
+        if (lastReloadDate === newDayKey) {
+          return; // Already reloaded for this day, abort
         }
-        // Mark that we're about to reload today
-        sessionStorage.setItem(RELOAD_FLAG_KEY, todayKey);
       } catch {
         // Ignore sessionStorage errors, proceed with reload
       }
 
-      // Expire all localStorage keys except selected masjid uuid.
+      // Expire all localStorage keys except selected masjid uuid and prayer cache.
       expireLocalStorageDaily(tz);
       // Reset page config (it lives in localStorage and should expire daily)
       setConfig(loadPageConfig());
@@ -204,10 +215,23 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
         const res = await loadMosqueById(selectedMosqueId);
         if (res?.mosque) setSelectedMosque(res.mosque);
       }
-      await loadPrayerTimes();
-      // Reload the page once a day at midnight (without removing localStorage)
-      // This ensures a fresh start each day while preserving selectedMosqueId
-      window.location.reload();
+
+      // Try to load fresh prayer times
+      try {
+        await loadPrayerTimes();
+        // Only set the reload flag and reload page if we successfully got data
+        try {
+          sessionStorage.setItem(RELOAD_FLAG_KEY, newDayKey);
+        } catch {
+          // Ignore sessionStorage errors
+        }
+        // Reload the page once a day at midnight to ensure fresh start
+        window.location.reload();
+      } catch (e) {
+        console.error("Midnight refresh failed:", e);
+        // Don't reload if we couldn't get data - keep showing cached times
+        // The next interval (tomorrow) will try again
+      }
     }, msUntilMidnight);
 
     return () => {

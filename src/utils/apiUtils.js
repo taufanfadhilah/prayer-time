@@ -3,7 +3,7 @@ import { getTodayKey } from "./dateUtils";
 
 export async function fetchTimesFromApi(locId, retries = 3, delayMs = 1000) {
   const url = `${API}/${locId}`;
-  
+
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const res = await fetch(url, { cache: "no-store" });
@@ -26,7 +26,7 @@ export async function fetchTimesFromApi(locId, retries = 3, delayMs = 1000) {
 export async function getPrayerData(locId, tz) {
   const todayKey = getTodayKey(tz);
 
-  // Try read from cache
+  // Try read from cache for today
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -44,20 +44,41 @@ export async function getPrayerData(locId, tz) {
     // Ignore cache errors and fall back to network
   }
 
-  // Fallback: fetch from API and store
-  const data = await fetchTimesFromApi(locId);
+  // Fetch from API and store
   try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        date: todayKey,
-        locId,
-        data,
-      })
-    );
-  } catch {
-    // Ignore storage errors, we still return fresh data
+    const data = await fetchTimesFromApi(locId);
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          date: todayKey,
+          locId,
+          data,
+        })
+      );
+    } catch {
+      // Ignore storage errors, we still return fresh data
+    }
+    return data;
+  } catch (apiError) {
+    // API failed - try to use cached data as fallback (even if from previous day)
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // Use cached data even if date doesn't match, as long as locId matches
+        // Prayer times don't change drastically day to day
+        if (parsed && parsed.locId === locId && parsed.data) {
+          console.warn("API unavailable, using cached prayer times:", apiError.message);
+          return parsed.data;
+        }
+      }
+    } catch {
+      // Ignore cache errors
+    }
+
+    // No fallback available, re-throw the error
+    throw apiError;
   }
-  return data;
 }
 
