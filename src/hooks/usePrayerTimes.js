@@ -163,81 +163,66 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
     }
   }, [schedule, tz]);
 
-  useEffect(() => {
-    // Ensure data refreshes at (local) midnight and then once per day after that
-    const RELOAD_FLAG_KEY = "dailyReloadDate";
+  // Ref to track midnight timeout for cleanup
+  const midnightTimeoutRef = useRef(null);
 
+  // Setup midnight refresh function (recursive, no page reload)
+  const setupMidnightRefresh = useCallback(() => {
     const now = new Date();
-    const currentTodayKey = getTodayKey(tz);
-
-    // Check if we've already reloaded today (prevent infinite loop)
-    try {
-      const lastReloadDate = sessionStorage.getItem(RELOAD_FLAG_KEY);
-      if (lastReloadDate === currentTodayKey) {
-        // Already reloaded today, don't set up another reload
-        return;
-      }
-    } catch {
-      // Ignore sessionStorage errors
-    }
-
     const nextMidnight = new Date(now);
     nextMidnight.setDate(now.getDate() + 1);
     nextMidnight.setHours(0, 0, 5, 0); // a few seconds after midnight
 
     const msUntilMidnight = nextMidnight.getTime() - now.getTime();
 
-    // Safety check: don't set timeout if we're already past midnight
+    // Safety check: don't set timeout if invalid
     if (msUntilMidnight <= 0 || msUntilMidnight > 24 * 60 * 60 * 1000) {
-      return;
+      return null;
     }
 
-    const midnightTimeoutId = setTimeout(async () => {
-      // Get fresh todayKey at midnight (not the stale closure value)
-      const newDayKey = getTodayKey(tz);
-
-      // Double-check we haven't already reloaded for this new day
-      try {
-        const lastReloadDate = sessionStorage.getItem(RELOAD_FLAG_KEY);
-        if (lastReloadDate === newDayKey) {
-          return; // Already reloaded for this day, abort
-        }
-      } catch {
-        // Ignore sessionStorage errors, proceed with reload
-      }
+    return setTimeout(async () => {
+      console.log("Midnight refresh triggered - updating data without page reload");
 
       // Expire all localStorage keys except selected masjid uuid and prayer cache.
       expireLocalStorageDaily(tz);
+
       // Reset page config (it lives in localStorage and should expire daily)
       setConfig(loadPageConfig());
+
       // Refresh selected masjid data from Supabase (fajr/footer/location might change)
       if (selectedMosqueId) {
-        const res = await loadMosqueById(selectedMosqueId);
-        if (res?.mosque) setSelectedMosque(res.mosque);
+        try {
+          const res = await loadMosqueById(selectedMosqueId);
+          if (res?.mosque) setSelectedMosque(res.mosque);
+        } catch (e) {
+          console.warn("Failed to reload mosque data:", e);
+        }
       }
 
-      // Try to load fresh prayer times
+      // Load fresh prayer times (will update state, no page reload needed)
       try {
         await loadPrayerTimes();
-        // Only set the reload flag and reload page if we successfully got data
-        try {
-          sessionStorage.setItem(RELOAD_FLAG_KEY, newDayKey);
-        } catch {
-          // Ignore sessionStorage errors
-        }
-        // Reload the page once a day at midnight to ensure fresh start
-        window.location.reload();
+        console.log("Midnight refresh completed successfully");
       } catch (e) {
         console.error("Midnight refresh failed:", e);
-        // Don't reload if we couldn't get data - keep showing cached times
-        // The next interval (tomorrow) will try again
+        // Keep showing existing data, don't clear
       }
+
+      // Setup next midnight refresh (recursive)
+      midnightTimeoutRef.current = setupMidnightRefresh();
     }, msUntilMidnight);
+  }, [tz, selectedMosqueId, loadPrayerTimes, setConfig, setSelectedMosque]);
+
+  // Initialize midnight refresh on mount
+  useEffect(() => {
+    midnightTimeoutRef.current = setupMidnightRefresh();
 
     return () => {
-      clearTimeout(midnightTimeoutId);
+      if (midnightTimeoutRef.current) {
+        clearTimeout(midnightTimeoutRef.current);
+      }
     };
-  }, [loadPrayerTimes, selectedMosqueId, tz, setConfig, setSelectedMosque]);
+  }, [setupMidnightRefresh]);
 
   // Update prayer times display when prepared changes
   useEffect(() => {

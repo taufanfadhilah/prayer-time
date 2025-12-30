@@ -1,19 +1,30 @@
-import { API, STORAGE_KEY } from "./constants";
+import { API, API_DIRECT, STORAGE_KEY } from "./constants";
 import { getTodayKey } from "./dateUtils";
 
 export async function fetchTimesFromApi(locId, retries = 3, delayMs = 1000) {
-  const url = `${API}/${locId}`;
+  // Try proxy first (no CORS issues)
+  const proxyUrl = `${API}/${locId}`;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const res = await fetch(url, { cache: "no-store" });
+      const res = await fetch(proxyUrl, { cache: "no-store" });
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
       return await res.json();
     } catch (error) {
-      // If this was the last attempt, throw the error
+      // If this was the last attempt with proxy, try direct API as fallback
       if (attempt === retries) {
+        console.warn("Proxy failed, trying direct API as fallback...", error.message);
+        try {
+          const directRes = await fetch(`${API_DIRECT}/${locId}`, { cache: "no-store" });
+          if (directRes.ok) {
+            return await directRes.json();
+          }
+        } catch (directError) {
+          console.warn("Direct API also failed:", directError.message);
+        }
+        // Both failed, throw original error
         throw error;
       }
       // Wait before retrying (exponential backoff: 1s, 2s, 4s)
