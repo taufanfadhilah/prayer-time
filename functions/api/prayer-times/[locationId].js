@@ -1,3 +1,27 @@
+// Telegram notification config
+const TELEGRAM_BOT_TOKEN = "8215763982:AAF4nSYRtbmxm4MOzh5RNL53QvwCJf4vsUE";
+const TELEGRAM_CHAT_ID = "559092409";
+
+async function sendTelegramNotification(message) {
+  try {
+    await fetch(
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: message,
+          parse_mode: "HTML",
+        }),
+      }
+    );
+  } catch (e) {
+    // Silently fail - don't let notification errors affect the main response
+    console.error("Failed to send Telegram notification:", e);
+  }
+}
+
 export async function onRequest(context) {
   const { params } = context;
   const locationId = params.locationId;
@@ -41,6 +65,16 @@ export async function onRequest(context) {
       },
     });
   } catch (error) {
+    // Send Telegram notification on error
+    const timestamp = new Date().toISOString();
+    await sendTelegramNotification(
+      `🚨 <b>Prayer Time API Error</b>\n\n` +
+        `📍 Location ID: <code>${locationId}</code>\n` +
+        `❌ Error: <code>${error.message}</code>\n` +
+        `🕐 Time: <code>${timestamp}</code>\n` +
+        `🌐 Source: prayertime-v2.fonti.dev`
+    );
+
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: {
