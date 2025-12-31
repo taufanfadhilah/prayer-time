@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && CLOUDFLARE_ACCOUNT_ID=bf3d4c08be7357833731ddef3f6a6da4 wrangler pages deploy dist --project-name=prayer-time --commit-dirty=true"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.88.0",
@@ -16,6 +17,7 @@
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
+    "wrangler": "^4.0.0",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",

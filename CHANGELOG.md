@@ -2,6 +2,24 @@
 
 All notable changes to the Prayer Time Display application will be documented in this file.
 
+## [2.0.1] - 2025-12-31
+
+### Fixed
+- **Thundering Herd Problem**: Added random jitter (5-120 seconds) to midnight refresh timing to prevent all clients from hitting the API at exactly the same time, which was causing 503 errors
+- **Telegram Success Notifications**: Now sends notification when midnight refresh succeeds, including all prayer times for the day
+
+### Added
+- **Auto Version Update**: App automatically detects new versions and reloads to get latest code
+- **Daily Maintenance Reload**: App reloads at 3:00 AM local time to ensure code updates are picked up (important for Android TV installations)
+- **Detailed Console Logging**: Added comprehensive logging for debugging midnight refresh flow
+
+### Technical Details
+- Random jitter spreads API requests over 2 minutes instead of all at once
+- Version check on app load with automatic reload if outdated
+- Scheduled maintenance reload at 3 AM using setTimeout
+
+---
+
 ## [2.0.0] - 2025-12-30
 
 ### Added

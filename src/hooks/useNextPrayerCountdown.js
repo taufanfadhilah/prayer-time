@@ -14,11 +14,11 @@ export function useNextPrayerCountdown(schedule, tz) {
 
     const updateCountdown = () => {
       const now = currentTimeTZ(tz);
-      
+
       // Find the next prayer time
       let nextPrayerTime = null;
       let nextIndex = -1;
-      
+
       // Check all prayer times to find the next one
       for (let i = 0; i < schedule.length; i++) {
         if (schedule[i] && now < schedule[i]) {
@@ -27,7 +27,7 @@ export function useNextPrayerCountdown(schedule, tz) {
           break;
         }
       }
-      
+
       // If no prayer time found for today, next prayer is tomorrow's Fajr (first prayer)
       if (!nextPrayerTime && schedule.length > 0 && schedule[0]) {
         // Create tomorrow's Fajr time by adding exactly 24 hours (86400000 ms)
@@ -41,7 +41,7 @@ export function useNextPrayerCountdown(schedule, tz) {
 
       if (nextPrayerTime) {
         const diffMs = nextPrayerTime.getTime() - now.getTime();
-        
+
         if (diffMs <= 0) {
           setCountdown("00:00:00");
           setNextPrayerIndex(nextIndex);
@@ -76,4 +76,3 @@ export function useNextPrayerCountdown(schedule, tz) {
 
   return { countdown, nextPrayerIndex };
 }
-

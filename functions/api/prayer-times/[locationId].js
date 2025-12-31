@@ -23,8 +23,12 @@ async function sendTelegramNotification(message) {
 }
 
 export async function onRequest(context) {
-  const { params } = context;
+  const { params, request } = context;
   const locationId = params.locationId;
+
+  // Check if this is a midnight refresh (should send success notification)
+  const url = new URL(request.url);
+  const isMidnightRefresh = url.searchParams.get("notify") === "midnight";
 
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -34,7 +38,7 @@ export async function onRequest(context) {
   };
 
   // Handle preflight request
-  if (context.request.method === "OPTIONS") {
+  if (request.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -56,6 +60,24 @@ export async function onRequest(context) {
 
     const data = await response.json();
 
+    // Send success notification ONLY for midnight refresh (to avoid spam)
+    if (isMidnightRefresh) {
+      const timestamp = new Date().toISOString();
+      await sendTelegramNotification(
+        `✅ <b>Midnight Refresh Success</b>\n\n` +
+          `📍 Location: <code>${data.lokacija || locationId}</code>\n` +
+          `📅 Date: <code>${data.datum?.[1] || "N/A"}</code>\n` +
+          `🕌 Prayer Times:\n` +
+          `   Fajr: ${data.vakat?.[0] || "-"}\n` +
+          `   Sunrise: ${data.vakat?.[1] || "-"}\n` +
+          `   Dhuhr: ${data.vakat?.[2] || "-"}\n` +
+          `   Asr: ${data.vakat?.[3] || "-"}\n` +
+          `   Maghrib: ${data.vakat?.[4] || "-"}\n` +
+          `   Isha: ${data.vakat?.[5] || "-"}\n` +
+          `🕐 Time: <code>${timestamp}</code>`
+      );
+    }
+
     // Return with CORS headers
     return new Response(JSON.stringify(data), {
       headers: {
@@ -72,7 +94,8 @@ export async function onRequest(context) {
         `📍 Location ID: <code>${locationId}</code>\n` +
         `❌ Error: <code>${error.message}</code>\n` +
         `🕐 Time: <code>${timestamp}</code>\n` +
-        `🌐 Source: prayertime-v2.fonti.dev`
+        `🌐 Source: prayertime-v2.fonti.dev` +
+        (isMidnightRefresh ? `\n⏰ <b>This was a MIDNIGHT REFRESH</b>` : "")
     );
 
     return new Response(JSON.stringify({ error: error.message }), {

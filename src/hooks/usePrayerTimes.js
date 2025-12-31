@@ -27,11 +27,25 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
   const hasPreparedDataRef = useRef(false);
 
   const loadPrayerTimes = useCallback(
-    async (forcedMosque = null) => {
+    async (forcedMosque = null, isMidnightRefresh = false) => {
       const mosque = forcedMosque || selectedMosque;
       const locId = mosque?.locationId ?? getFallbackLocationId();
+
+      console.log(`[PrayerTimes] Loading prayer times...`, {
+        locationId: locId,
+        timezone: tz,
+        isMidnightRefresh,
+        timestamp: new Date().toISOString(),
+      });
+
       try {
-        const data = await getPrayerData(locId, tz);
+        const data = await getPrayerData(locId, tz, isMidnightRefresh);
+
+        console.log(`[PrayerTimes] API response received:`, {
+          location: data.lokacija,
+          date: data.datum,
+          times: data.vakat,
+        });
         let nextPrepared = data.vakat;
 
         const overrideFajr =
@@ -116,14 +130,23 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
         }
         setActivePrayerIndex(idx);
       } catch (e) {
-        console.error("Failed to load prayer times:", e);
+        console.error(`[PrayerTimes] Failed to load prayer times:`, {
+          error: e.message,
+          isMidnightRefresh,
+          hasExistingData: hasPreparedDataRef.current,
+          timestamp: new Date().toISOString(),
+        });
+
         // Only clear data if we don't already have valid prayer times displayed
         // This prevents showing empty times when API fails but we have cached data
         if (!hasPreparedDataRef.current) {
+          console.warn(`[PrayerTimes] No existing data - showing placeholder times`);
           setPrayerTimes(["--:--", "--:--", "--:--", "--:--", "--:--", "--:--"]);
           setSchedule(null);
           setPrepared(null);
           setActivePrayerIndex(-1);
+        } else {
+          console.log(`[PrayerTimes] Keeping existing data displayed`);
         }
         // Update status to indicate there was an issue
         setStatus("Using cached data (API unavailable)");
@@ -171,44 +194,75 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
     const now = new Date();
     const nextMidnight = new Date(now);
     nextMidnight.setDate(now.getDate() + 1);
-    nextMidnight.setHours(0, 0, 5, 0); // a few seconds after midnight
+
+    // Add random jitter (5-120 seconds) to avoid "thundering herd" problem
+    // where all clients hit the API at exactly the same time causing 503 errors
+    const jitterSeconds = 5 + Math.floor(Math.random() * 115); // 5-120 seconds
+    nextMidnight.setHours(0, 0, jitterSeconds, 0);
 
     const msUntilMidnight = nextMidnight.getTime() - now.getTime();
 
     // Safety check: don't set timeout if invalid
     if (msUntilMidnight <= 0 || msUntilMidnight > 24 * 60 * 60 * 1000) {
+      console.warn(`[PrayerTimes] Invalid midnight timeout: ${msUntilMidnight}ms`);
       return null;
     }
 
+    const hoursUntil = Math.floor(msUntilMidnight / (1000 * 60 * 60));
+    const minsUntil = Math.floor((msUntilMidnight % (1000 * 60 * 60)) / (1000 * 60));
+    console.log(`[PrayerTimes] Midnight refresh scheduled in ${hoursUntil}h ${minsUntil}m (jitter: ${jitterSeconds}s)`, {
+      currentTime: now.toISOString(),
+      scheduledFor: nextMidnight.toISOString(),
+      jitterSeconds,
+      msUntilMidnight,
+    });
+
     return setTimeout(async () => {
-      console.log("Midnight refresh triggered - updating data without page reload");
+      console.log(`%c[PrayerTimes] ⏰ MIDNIGHT REFRESH TRIGGERED`, 'background: #222; color: #bada55; font-size: 14px;', {
+        timestamp: new Date().toISOString(),
+      });
 
       // Expire all localStorage keys except selected masjid uuid and prayer cache.
+      console.log(`[PrayerTimes] Step 1/4: Expiring old localStorage keys...`);
       expireLocalStorageDaily(tz);
 
       // Reset page config (it lives in localStorage and should expire daily)
+      console.log(`[PrayerTimes] Step 2/4: Reloading page config...`);
       setConfig(loadPageConfig());
 
       // Refresh selected masjid data from Supabase (fajr/footer/location might change)
       if (selectedMosqueId) {
+        console.log(`[PrayerTimes] Step 3/4: Refreshing mosque data from Supabase...`);
         try {
           const res = await loadMosqueById(selectedMosqueId);
-          if (res?.mosque) setSelectedMosque(res.mosque);
+          if (res?.mosque) {
+            setSelectedMosque(res.mosque);
+            console.log(`[PrayerTimes] Mosque data refreshed:`, res.mosque.name);
+          }
         } catch (e) {
-          console.warn("Failed to reload mosque data:", e);
+          console.warn(`[PrayerTimes] Failed to reload mosque data:`, e.message);
         }
+      } else {
+        console.log(`[PrayerTimes] Step 3/4: No mosque selected, skipping Supabase refresh`);
       }
 
       // Load fresh prayer times (will update state, no page reload needed)
+      console.log(`[PrayerTimes] Step 4/4: Fetching fresh prayer times from API...`);
       try {
-        await loadPrayerTimes();
-        console.log("Midnight refresh completed successfully");
+        await loadPrayerTimes(null, true); // Pass isMidnightRefresh = true
+        console.log(`%c[PrayerTimes] ✅ MIDNIGHT REFRESH COMPLETED SUCCESSFULLY`, 'background: #222; color: #00ff00; font-size: 14px;', {
+          timestamp: new Date().toISOString(),
+        });
       } catch (e) {
-        console.error("Midnight refresh failed:", e);
+        console.error(`%c[PrayerTimes] ❌ MIDNIGHT REFRESH FAILED`, 'background: #222; color: #ff0000; font-size: 14px;', {
+          error: e.message,
+          timestamp: new Date().toISOString(),
+        });
         // Keep showing existing data, don't clear
       }
 
       // Setup next midnight refresh (recursive)
+      console.log(`[PrayerTimes] Setting up next midnight refresh...`);
       midnightTimeoutRef.current = setupMidnightRefresh();
     }, msUntilMidnight);
   }, [tz, selectedMosqueId, loadPrayerTimes, setConfig, setSelectedMosque]);

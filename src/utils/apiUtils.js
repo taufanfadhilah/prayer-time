@@ -1,40 +1,49 @@
 import { API, API_DIRECT, STORAGE_KEY } from "./constants";
 import { getTodayKey } from "./dateUtils";
 
-export async function fetchTimesFromApi(locId, retries = 3, delayMs = 1000) {
+export async function fetchTimesFromApi(locId, isMidnightRefresh = false, retries = 3, delayMs = 1000) {
   // Try proxy first (no CORS issues)
-  const proxyUrl = `${API}/${locId}`;
+  // Add notify=midnight param for midnight refresh to trigger Telegram success notification
+  const notifyParam = isMidnightRefresh ? "?notify=midnight" : "";
+  const proxyUrl = `${API}/${locId}${notifyParam}`;
+
+  console.log(`[API] Fetching from proxy: ${proxyUrl}`);
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
+      console.log(`[API] Attempt ${attempt + 1}/${retries + 1}...`);
       const res = await fetch(proxyUrl, { cache: "no-store" });
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
+      console.log(`[API] Success from proxy`);
       return await res.json();
     } catch (error) {
+      console.warn(`[API] Attempt ${attempt + 1} failed:`, error.message);
       // If this was the last attempt with proxy, try direct API as fallback
       if (attempt === retries) {
-        console.warn("Proxy failed, trying direct API as fallback...", error.message);
+        console.warn("[API] Proxy failed, trying direct API as fallback...");
         try {
           const directRes = await fetch(`${API_DIRECT}/${locId}`, { cache: "no-store" });
           if (directRes.ok) {
+            console.log(`[API] Success from direct API`);
             return await directRes.json();
           }
         } catch (directError) {
-          console.warn("Direct API also failed:", directError.message);
+          console.warn("[API] Direct API also failed:", directError.message);
         }
         // Both failed, throw original error
         throw error;
       }
       // Wait before retrying (exponential backoff: 1s, 2s, 4s)
       const waitTime = delayMs * Math.pow(2, attempt);
+      console.log(`[API] Waiting ${waitTime}ms before retry...`);
       await new Promise((resolve) => setTimeout(resolve, waitTime));
     }
   }
 }
 
-export async function getPrayerData(locId, tz) {
+export async function getPrayerData(locId, tz, isMidnightRefresh = false) {
   const todayKey = getTodayKey(tz);
 
   // Try read from cache for today
@@ -57,7 +66,7 @@ export async function getPrayerData(locId, tz) {
 
   // Fetch from API and store
   try {
-    const data = await fetchTimesFromApi(locId);
+    const data = await fetchTimesFromApi(locId, isMidnightRefresh);
     try {
       localStorage.setItem(
         STORAGE_KEY,
