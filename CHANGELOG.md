@@ -2,6 +2,19 @@
 
 All notable changes to the Prayer Time Display application will be documented in this file.
 
+## [2.0.2] - 2025-12-31
+
+### Added
+- **Page Load Notifications**: Telegram notification sent when a client loads the app (once per session to avoid spam)
+- **Version Upgrade Notifications**: Telegram notification sent when a client upgrades from an old version to a new version, showing both old and new version numbers
+
+### Technical Details
+- New Cloudflare Function: `functions/api/notify-load.js`
+- Uses `navigator.sendBeacon()` for reliable notification delivery even during page reload
+- Session-based throttling prevents duplicate notifications on same session
+
+---
+
 ## [2.0.1] - 2025-12-31
 
 ### Fixed

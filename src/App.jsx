@@ -11,15 +11,55 @@ import PrayerTimesList from "./components/PrayerTimesList";
 import Footer from "./components/Footer";
 
 // App version - increment this to force reload on all clients
-const APP_VERSION = "2.0.1";
+const APP_VERSION = "2.0.2";
+
+// Send notification to Telegram via Cloudflare Function
+function sendLoadNotification(type, fromVersion = null) {
+  const payload = {
+    type, // "load" | "upgrade"
+    currentVersion: APP_VERSION,
+    fromVersion,
+    toVersion: type === "upgrade" ? APP_VERSION : null,
+    locationId: localStorage.getItem("locId") || "N/A",
+    userAgent: navigator.userAgent.slice(0, 100), // Truncate for readability
+  };
+
+  const url = "/api/notify-load";
+  const body = JSON.stringify(payload);
+
+  // Use sendBeacon for reliability (works even during page unload)
+  if (navigator.sendBeacon) {
+    const blob = new Blob([body], { type: "application/json" });
+    navigator.sendBeacon(url, blob);
+    console.log(`[App] 📤 Sent ${type} notification via sendBeacon`);
+  } else {
+    // Fallback to fetch with keepalive
+    fetch(url, {
+      method: "POST",
+      body,
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+    }).catch(() => {}); // Fire and forget
+    console.log(`[App] 📤 Sent ${type} notification via fetch`);
+  }
+}
 
 // Force reload if app version changed (ensures clients get latest code)
 function checkVersionAndReload() {
   const storedVersion = localStorage.getItem("appVersion");
   if (storedVersion !== APP_VERSION) {
     console.log(`[App] Version changed: ${storedVersion} → ${APP_VERSION}, reloading...`);
+
+    // Send upgrade notification BEFORE reload
+    sendLoadNotification("upgrade", storedVersion);
+
     localStorage.setItem("appVersion", APP_VERSION);
-    window.location.reload();
+
+    // Small delay to ensure notification is sent before reload
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
+
     return true; // Indicates reload is happening
   }
   return false;
@@ -52,9 +92,16 @@ function scheduleMaintenanceReload() {
 const isReloading = checkVersionAndReload();
 
 function App() {
-  // Schedule maintenance reload on mount
+  // Schedule maintenance reload and send page load notification on mount
   useEffect(() => {
     if (isReloading) return; // Don't schedule if we're about to reload
+
+    // Send page load notification (only once per session to avoid spam)
+    const hasNotifiedThisSession = sessionStorage.getItem("loadNotified");
+    if (!hasNotifiedThisSession) {
+      sendLoadNotification("load");
+      sessionStorage.setItem("loadNotified", "true");
+    }
 
     const maintenanceTimeout = scheduleMaintenanceReload();
 
