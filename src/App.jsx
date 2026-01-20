@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { expireLocalStorageDaily } from "./utils/storageUtils";
 import { useClock } from "./hooks/useClock";
 import { useMosque } from "./hooks/useMosque";
@@ -11,7 +12,7 @@ import PrayerTimesList from "./components/PrayerTimesList";
 import Footer from "./components/Footer";
 
 // App version - increment this to force reload on all clients
-const APP_VERSION = "2.0.2";
+const APP_VERSION = "2.0.3";
 
 // Send notification to Telegram via Cloudflare Function
 function sendLoadNotification(type, fromVersion = null) {
@@ -92,6 +93,33 @@ function scheduleMaintenanceReload() {
 const isReloading = checkVersionAndReload();
 
 function App() {
+  const navigate = useNavigate();
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+  // Expire all localStorage keys daily, except the selected masjid UUID.
+  expireLocalStorageDaily(tz);
+
+  // All hooks must be called before any early returns
+  const { selectedMosque, selectedMosqueId, setSelectedMosque } = useMosque();
+  const { clock, gregorianDate, hijriDate } = useClock(tz);
+  const { config, setConfig } = usePageConfig();
+  const { prayerTimes, activePrayerIndex, hijriMonthApi, schedule, hasCustomFajrTime } = usePrayerTimes(
+    tz,
+    selectedMosque,
+    config,
+    setConfig,
+    selectedMosqueId,
+    setSelectedMosque
+  );
+  const { countdown } = useNextPrayerCountdown(schedule, tz);
+
+  // Redirect to config page if no mosque is selected
+  useEffect(() => {
+    if (!selectedMosqueId) {
+      navigate("/config", { replace: true });
+    }
+  }, [selectedMosqueId, navigate]);
+
   // Schedule maintenance reload and send page load notification on mount
   useEffect(() => {
     if (isReloading) return; // Don't schedule if we're about to reload
@@ -109,23 +137,11 @@ function App() {
       clearTimeout(maintenanceTimeout);
     };
   }, []);
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  // Expire all localStorage keys daily, except the selected masjid UUID.
-  // (Runs every render, but only does work once per day.)
-  expireLocalStorageDaily(tz);
 
-  const { clock, gregorianDate, hijriDate } = useClock(tz);
-  const { selectedMosque, selectedMosqueId, setSelectedMosque } = useMosque();
-  const { config, setConfig } = usePageConfig();
-  const { prayerTimes, activePrayerIndex, hijriMonthApi, schedule, hasCustomFajrTime } = usePrayerTimes(
-    tz,
-    selectedMosque,
-    config,
-    setConfig,
-    selectedMosqueId,
-    setSelectedMosque
-  );
-  const { countdown } = useNextPrayerCountdown(schedule, tz);
+  // Don't render anything while redirecting to config
+  if (!selectedMosqueId) {
+    return null;
+  }
 
   const masjidHeaderLine = selectedMosque?.name
     ? selectedMosque.name

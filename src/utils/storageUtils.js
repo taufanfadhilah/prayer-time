@@ -29,12 +29,16 @@ export function expireLocalStorageDaily(tz) {
   }
 }
 
+/**
+ * @deprecated No longer used - mosque selection is now required.
+ * Kept for backwards compatibility but will be removed in future version.
+ */
 export function getFallbackLocationId() {
   try {
     const saved = localStorage.getItem("locId");
-    return saved ? Number(saved) : 14;
+    return saved ? Number(saved) : null;
   } catch {
-    return 14;
+    return null;
   }
 }
 
