@@ -12,7 +12,7 @@ import PrayerTimesList from "./components/PrayerTimesList";
 import Footer from "./components/Footer";
 
 // App version - increment this to force reload on all clients
-const APP_VERSION = "2.0.3";
+const APP_VERSION = "2.0.5";
 
 // Send notification to Telegram via Cloudflare Function
 function sendLoadNotification(type, fromVersion = null) {
@@ -119,6 +119,37 @@ function App() {
       navigate("/config", { replace: true });
     }
   }, [selectedMosqueId, navigate]);
+
+  // TV remote shortcuts:
+  // - D-pad Center (Enter/OK) → /config
+  // - D-pad Center pressed 3x quickly → /admin/config
+  useEffect(() => {
+    let pressCount = 0;
+    let pressTimer = null;
+
+    const handleKeyDown = (e) => {
+      // D-pad center = Enter (keyCode 13) or keyCode 23 (DPAD_CENTER)
+      if (e.keyCode === 13 || e.keyCode === 23) {
+        e.preventDefault();
+        pressCount++;
+        clearTimeout(pressTimer);
+        pressTimer = setTimeout(() => {
+          if (pressCount >= 3) {
+            navigate("/admin/config");
+          } else {
+            navigate("/config");
+          }
+          pressCount = 0;
+        }, 600);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      clearTimeout(pressTimer);
+    };
+  }, [navigate]);
 
   // Schedule maintenance reload and send page load notification on mount
   useEffect(() => {

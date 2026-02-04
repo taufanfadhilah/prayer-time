@@ -23,3 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
+# Build artifacts
+*.apk
+*.apk.zip
+prayer-time-tv.zip
+

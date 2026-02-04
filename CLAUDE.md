@@ -12,14 +12,20 @@ A multi-mosque prayer times display system built for TV/screen displays in mosqu
 - **Database:** Supabase (PostgreSQL)
 - **Prayer Times API:** Vaktija.ba (Bosnia/Sandžak locations)
 - **Deployment:** Cloudflare Pages (via Wrangler)
+- **Native Wrapper:** Capacitor 8.x (for Android TV APK)
 
 ## Quick Commands
 
 ```bash
-npm run dev      # Start dev server
-npm run build    # Build for production
-npm run preview  # Preview production build
-npm run deploy   # Build and deploy to Cloudflare Pages
+npm run dev           # Start dev server
+npm run build         # Build for production
+npm run preview       # Preview production build
+npm run deploy        # Build and deploy to Cloudflare Pages
+
+# Android TV Commands
+npm run android:sync  # Build and sync to Android project
+npm run android:open  # Open in Android Studio
+npm run android:run   # Run on connected device/emulator
 ```
 
 ## Project Structure
@@ -138,10 +144,26 @@ Client-side calculation in `dateUtils.js` + API-provided month from Vaktija when
 
 ## Deployment
 
-Deployed to Cloudflare Pages:
+### Web (Cloudflare Pages)
 - **Production URL:** https://prayer-time-3ps.pages.dev
 - **Account:** Januar@fonti.dev
 
 ```bash
 npm run deploy  # Builds and deploys to Cloudflare
 ```
+
+### Android TV APK
+
+See [docs/ANDROID_TV_BUILD.md](docs/ANDROID_TV_BUILD.md) for complete build instructions.
+
+**Quick build:**
+```bash
+npm run android:sync  # Build web assets and sync to Android
+npm run android:open  # Open in Android Studio to build APK
+```
+
+**Key files:**
+- `capacitor.config.ts` - Capacitor configuration
+- `android/app/src/main/AndroidManifest.xml` - TV support flags
+- `android/app/src/main/java/.../MainActivity.java` - Fullscreen mode
+- `android/app/src/main/res/drawable/tv_banner.xml` - TV launcher banner
