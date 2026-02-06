@@ -1,14 +1,15 @@
 import { labels } from "../utils/constants";
+import { fontSize, spacing } from "../utils/platformConfig";
 
 export default function PrayerTimesList({ prayerTimes, activePrayerIndex, hasCustomFajrTime }) {
   return (
     <section className="mb-3 flex-1 min-h-0 flex flex-col">
       <div className="rounded-lg overflow-hidden flex flex-col flex-1 min-h-0">
         {/* Title Bar */}
-        <div className="bg-prayer-green text-white px-4 py-1.5 rounded-lg flex-shrink-0">
+        <div className={`bg-prayer-green text-white px-4 ${spacing.titleBarPy} rounded-lg flex-shrink-0`}>
           <div
             className="font-bold text-center uppercase"
-            style={{ fontSize: "20px" }}
+            style={{ fontSize: fontSize.listTitle }}
           >
             VRIJEME NAMAZA | PRAYER TIMES
           </div>
@@ -22,14 +23,14 @@ export default function PrayerTimesList({ prayerTimes, activePrayerIndex, hasCus
               return (
                 <div
                   key={i}
-                  className={`prayer-row flex flex-row items-center py-1 px-3`}
+                  className={`prayer-row flex flex-row items-center ${spacing.prayerRowPy} px-3`}
                 >
                   <div className="flex-1 text-left pr-3">
                     <div
                       className={`font-medium ${
                         isActive ? "text-prayer-green" : "text-dark-text"
                       } leading-tight`}
-                      style={{ fontSize: "24px" }}
+                      style={{ fontSize: fontSize.prayerName }}
                     >
                       {i === 0
                         ? hasCustomFajrTime
@@ -43,7 +44,7 @@ export default function PrayerTimesList({ prayerTimes, activePrayerIndex, hasCus
                       className={`font-semibold ${
                         isActive ? "text-prayer-green" : "text-dark-text"
                       }`}
-                      style={{ fontSize: "48px" }}
+                      style={{ fontSize: fontSize.prayerTime }}
                     >
                       {time}
                     </div>
@@ -53,7 +54,7 @@ export default function PrayerTimesList({ prayerTimes, activePrayerIndex, hasCus
                       className={`font-medium ${
                         isActive ? "text-prayer-green" : "text-dark-text"
                       }`}
-                      style={{ fontSize: "24px" }}
+                      style={{ fontSize: fontSize.prayerLabel }}
                     >
                       {labels.en[i]}
                     </div>
@@ -61,7 +62,7 @@ export default function PrayerTimesList({ prayerTimes, activePrayerIndex, hasCus
                       className={`font-normal ${
                         isActive ? "text-prayer-green" : "text-dark-text"
                       } mt-0 opacity-90`}
-                      style={{ fontSize: "24px" }}
+                      style={{ fontSize: fontSize.prayerLabel }}
                     >
                       {labels.ar[i]}
                     </div>

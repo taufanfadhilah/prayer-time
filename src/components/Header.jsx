@@ -1,4 +1,5 @@
 import ClockDisplay from "./ClockDisplay";
+import { fontSize } from "../utils/platformConfig";
 
 function toggleFullscreen() {
   if (document.fullscreenElement) {
@@ -23,14 +24,14 @@ export default function Header({ masjidHeaderLine, clock }) {
           <div className="flex flex-col text-dark-text">
             <p
               className="font-bold uppercase text-prayer-green"
-              style={{ fontSize: "14px" }}
+              style={{ fontSize: fontSize.headerTitle }}
             >
               ISLAMSKA ZAJEDNICA U BOSNI I HERCEGOVINI
             </p>
           </div>
           <div
             className="font-normal text-islamic-date mt-1 text-center"
-            style={{ fontSize: "12px" }}
+            style={{ fontSize: fontSize.headerSubtitle }}
           >
             {masjidHeaderLine}
           </div>

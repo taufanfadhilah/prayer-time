@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { isNative } from "./utils/platformConfig";
 import { expireLocalStorageDaily } from "./utils/storageUtils";
 import { useClock } from "./hooks/useClock";
 import { useMosque } from "./hooks/useMosque";
@@ -120,10 +121,13 @@ function App() {
     }
   }, [selectedMosqueId, navigate]);
 
-  // TV remote shortcuts:
+  // TV remote shortcuts (native only):
   // - D-pad Center (Enter/OK) → /config
   // - D-pad Center pressed 3x quickly → /admin/config
   useEffect(() => {
+    // Only enable D-pad navigation on native (Android TV)
+    if (!isNative) return;
+
     let pressCount = 0;
     let pressTimer = null;
 
