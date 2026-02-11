@@ -11,6 +11,7 @@ import Header from "./components/Header";
 import DateDisplay from "./components/DateDisplay";
 import PrayerTimesList from "./components/PrayerTimesList";
 import Footer from "./components/Footer";
+import { trackAppLoaded, trackVersionUpgrade } from "./utils/analytics";
 
 // App version - increment this to force reload on all clients
 const APP_VERSION = "2.0.5";
@@ -54,6 +55,7 @@ function checkVersionAndReload() {
 
     // Send upgrade notification BEFORE reload
     sendLoadNotification("upgrade", storedVersion);
+    trackVersionUpgrade(storedVersion);
 
     localStorage.setItem("appVersion", APP_VERSION);
 
@@ -163,6 +165,7 @@ function App() {
     const hasNotifiedThisSession = sessionStorage.getItem("loadNotified");
     if (!hasNotifiedThisSession) {
       sendLoadNotification("load");
+      trackAppLoaded(selectedMosque?.name);
       sessionStorage.setItem("loadNotified", "true");
     }
 

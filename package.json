@@ -10,6 +10,7 @@
     "deploy": "npm run build && CLOUDFLARE_ACCOUNT_ID=bf3d4c08be7357833731ddef3f6a6da4 wrangler pages deploy dist --project-name=prayer-time --commit-dirty=true"
   },
   "dependencies": {
+    "@capacitor/android": "^8.0.2",
     "@capacitor/core": "^8.0.2",
     "@supabase/supabase-js": "^2.88.0",
     "react": "^18.3.1",
@@ -17,12 +18,14 @@
     "react-router-dom": "^6.28.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.0.2",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.41",
     "tailwindcss": "^3.4.10",
+    "typescript": "^5.9.3",
     "vite": "^5.4.2",
     "wrangler": "^4.0.0"
   }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loadMosqueById, loadMosques } from "./mosqueStore";
+import { trackMosqueSelected, trackMosqueCleared } from "./utils/analytics";
 
 const LOCAL_STORAGE_DAY_KEY = "localStorageDay";
 const SELECTED_MOSQUE_ID_KEY = "selectedMosqueId";
@@ -130,6 +131,8 @@ function ConfigPage() {
     setBusy(true);
     writeSelectedMosqueId(selectedId);
     clearCachesForImmediateRefresh();
+    const mosque = mosques.find((m) => m.id === selectedId);
+    trackMosqueSelected(mosque?.name || selectedId);
     setBusy(false);
     window.alert("Masjid selection saved.");
     navigate("/");
@@ -141,6 +144,7 @@ function ConfigPage() {
     setSelectedId("");
     setCurrentMosque(null);
     clearCachesForImmediateRefresh();
+    trackMosqueCleared();
     setBusy(false);
     window.alert("Masjid selection cleared.");
     navigate("/");
@@ -237,6 +241,7 @@ function ConfigPage() {
               className="inline-flex items-center px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-900 text-xs sm:text-sm font-semibold hover:bg-gray-50"
               onClick={() => navigate("/")}
               disabled={busy}
+              data-umami-event="config-back"
             >
               Back
             </button>
@@ -245,6 +250,7 @@ function ConfigPage() {
               className="inline-flex items-center px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-900 text-xs sm:text-sm font-semibold hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
               onClick={handleClear}
               disabled={busy || !selectedId}
+              data-umami-event="config-clear"
             >
               Clear
             </button>
@@ -252,6 +258,7 @@ function ConfigPage() {
               type="submit"
               className="inline-flex items-center px-4 py-2 rounded-md bg-prayer-green text-white text-xs sm:text-sm font-semibold hover:bg-prayer-green/90 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-prayer-green focus:ring-offset-dark-background"
               disabled={busy || !selectedId}
+              data-umami-event="config-save"
             >
               {busy ? "Saving…" : "Save"}
             </button>

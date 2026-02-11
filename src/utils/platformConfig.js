@@ -1,15 +1,12 @@
-import { Capacitor } from '@capacitor/core';
+// Detect Android TV via user-agent since the app loads from a remote URL
+// and Capacitor.isNativePlatform() returns false in that scenario.
+const ua = navigator.userAgent || '';
+const _isAndroidTV = /Android/.test(ua) && /TV|AFT|BRAVIA|SHIELD/.test(ua);
+const _isAndroid = /Android/.test(ua);
 
-let _isNative = false;
-try {
-  _isNative = Capacitor.isNativePlatform();
-} catch {
-  _isNative = false;
-}
+console.log('[platformConfig] userAgent:', ua, 'isAndroid:', _isAndroid, 'isAndroidTV:', _isAndroidTV);
 
-console.log('[platformConfig] platform:', Capacitor.getPlatform(), 'isNative:', _isNative);
-
-export const isNative = _isNative;
+export const isNative = _isAndroid;
 
 export const fontSize = {
   // Header

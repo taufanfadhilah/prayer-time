@@ -14,9 +14,7 @@ const config: CapacitorConfig = {
     initialFocus: true,
   },
   server: {
-    // For development with hot reload (comment out for production)
-    // url: 'http://localhost:5173',
-    cleartext: true, // Allow HTTP for API calls if needed
+    url: 'https://prayertime-v2.fonti.dev',
   },
   plugins: {
     // No additional plugins needed for basic TV display
