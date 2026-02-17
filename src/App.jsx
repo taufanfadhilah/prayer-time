@@ -14,7 +14,7 @@ import Footer from "./components/Footer";
 import { trackAppLoaded, trackVersionUpgrade } from "./utils/analytics";
 
 // App version - increment this to force reload on all clients
-const APP_VERSION = "2.0.5";
+const APP_VERSION = "2.0.6";
 
 // Send notification to Telegram via Cloudflare Function
 function sendLoadNotification(type, fromVersion = null) {
@@ -213,6 +213,7 @@ function App() {
             prayerTimes={prayerTimes}
             activePrayerIndex={activePrayerIndex}
             hasCustomFajrTime={hasCustomFajrTime}
+            isFriday={new Date().getDay() === 5}
           />
           <Footer footerText={effectiveFooterText} countdown={countdown} />
         </div>
