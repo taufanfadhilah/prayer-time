@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && CLOUDFLARE_ACCOUNT_ID=bf3d4c08be7357833731ddef3f6a6da4 wrangler pages deploy dist --project-name=prayer-time --commit-dirty=true"
+    "deploy": "npm run build && CLOUDFLARE_ACCOUNT_ID=bf3d4c08be7357833731ddef3f6a6da4 wrangler pages deploy dist --project-name=prayer-time --commit-dirty=true",
+    "upload:apk": "wrangler r2 object put files/prayer-time/android/prayer-time-tv.apk --file=prayer-time-tv.apk --content-type=application/vnd.android.package-archive --remote"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.2",
