@@ -14,7 +14,7 @@ import Footer from "./components/Footer";
 import { trackAppLoaded, trackVersionUpgrade } from "./utils/analytics";
 
 // App version - increment this to force reload on all clients
-const APP_VERSION = "2.0.6";
+const APP_VERSION = "2.0.7";
 
 // Send notification to Telegram via Cloudflare Function
 function sendLoadNotification(type, fromVersion = null) {
@@ -104,7 +104,6 @@ function App() {
 
   // All hooks must be called before any early returns
   const { selectedMosque, selectedMosqueId, setSelectedMosque } = useMosque();
-  const { clock, gregorianDate, hijriDate } = useClock(tz);
   const { config, setConfig } = usePageConfig();
   const { prayerTimes, activePrayerIndex, hijriMonthApi, schedule, hasCustomFajrTime } = usePrayerTimes(
     tz,
@@ -114,6 +113,10 @@ function App() {
     selectedMosqueId,
     setSelectedMosque
   );
+
+  // Maghrib is index 4 in the schedule — pass to useClock so Hijri date advances at Maghrib
+  const maghribTime = schedule?.[4] ?? null;
+  const { clock, gregorianDate, hijriDate, isAfterMaghrib } = useClock(tz, maghribTime);
   const { countdown } = useNextPrayerCountdown(schedule, tz);
 
   // Redirect to config page if no mosque is selected
@@ -207,7 +210,7 @@ function App() {
           <DateDisplay
             gregorianDate={gregorianDate}
             hijriDate={hijriDate}
-            hijriMonthApi={hijriMonthApi}
+            hijriMonthApi={isAfterMaghrib ? null : hijriMonthApi}
           />
           <PrayerTimesList
             prayerTimes={prayerTimes}
