@@ -14,7 +14,7 @@ import Footer from "./components/Footer";
 import { trackAppLoaded, trackVersionUpgrade } from "./utils/analytics";
 
 // App version - increment this to force reload on all clients
-const APP_VERSION = "2.0.7";
+const APP_VERSION = "2.0.8";
 
 // Send notification to Telegram via Cloudflare Function
 function sendLoadNotification(type, fromVersion = null) {
@@ -210,7 +210,7 @@ function App() {
           <DateDisplay
             gregorianDate={gregorianDate}
             hijriDate={hijriDate}
-            hijriMonthApi={isAfterMaghrib ? null : hijriMonthApi}
+            hijriMonthApi={isAfterMaghrib ? hijriMonthApi : null}
           />
           <PrayerTimesList
             prayerTimes={prayerTimes}
