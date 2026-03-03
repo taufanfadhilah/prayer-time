@@ -21,6 +21,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             </AdminAuthGate>
           }
         />
+        <Route path="/admin/config/:mosqueId" element={<AdminConfigPage />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

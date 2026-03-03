@@ -3,17 +3,20 @@ import { useNavigate } from "react-router-dom";
 import { savePageConfig } from "./pageConfig";
 import { LOCATIONS, findLocationNameById } from "./locations";
 import { logoutAdmin } from "./adminAuth";
+import { useParams } from "react-router-dom";
 import {
   createMosque,
   deleteMosque,
   getActiveMosqueId,
   loadMosques,
+  loadMosqueById,
   setActiveMosqueId,
   updateMosque,
 } from "./mosqueStore";
 
 function AdminConfigPage() {
   const navigate = useNavigate();
+  const { mosqueId: routeMosqueId } = useParams();
 
   const [mosques, setMosques] = useState([]);
   const [activeMosqueId, setActive] = useState(() => getActiveMosqueId());
@@ -29,17 +32,48 @@ function AdminConfigPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    const html = document.documentElement;
+    const root = document.getElementById('root');
+    const prevHtml = html.style.overflow;
+    const prevBody = document.body.style.overflow;
+    const prevRoot = root ? root.style.overflow : '';
+    html.style.overflow = 'auto';
+    document.body.style.overflow = 'auto';
+    if (root) root.style.overflow = 'auto';
+    return () => {
+      html.style.overflow = prevHtml;
+      document.body.style.overflow = prevBody;
+      if (root) root.style.overflow = prevRoot;
+    };
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     const run = async () => {
       setLoading(true);
       setError("");
-      const res = await loadMosques();
-      if (cancelled) return;
-      if (res?.error) {
-        setError(res.error);
-        setMosques([]);
+
+      if (routeMosqueId) {
+        // Individual mosque admin mode
+        const res = await loadMosqueById(routeMosqueId);
+        if (cancelled) return;
+        if (res?.error) {
+          setError(res.error);
+          setMosques([]);
+        } else {
+          setMosques([res.mosque]);
+          startEdit(res.mosque);
+        }
       } else {
-        setMosques(res.mosques || []);
+        // Global admin mode
+        const res = await loadMosques();
+        if (cancelled) return;
+        if (res?.error) {
+          setError(res.error);
+          setMosques([]);
+        } else {
+          setMosques(res.mosques || []);
+        }
       }
       setLoading(false);
     };
@@ -47,7 +81,7 @@ function AdminConfigPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [routeMosqueId]);
 
   const locationOptions = useMemo(() => {
     return LOCATIONS.slice().sort((a, b) => a.name.localeCompare(b.name));
@@ -56,12 +90,23 @@ function AdminConfigPage() {
   const refreshMosques = async () => {
     setLoading(true);
     setError("");
-    const res = await loadMosques();
-    if (res?.error) {
-      setError(res.error);
-      setMosques([]);
+    if (routeMosqueId) {
+      const res = await loadMosqueById(routeMosqueId);
+      if (res?.error) {
+        setError(res.error);
+        setMosques([]);
+      } else {
+        setMosques([res.mosque]);
+        startEdit(res.mosque);
+      }
     } else {
-      setMosques(res.mosques || []);
+      const res = await loadMosques();
+      if (res?.error) {
+        setError(res.error);
+        setMosques([]);
+      } else {
+        setMosques(res.mosques || []);
+      }
     }
     setLoading(false);
     setActive(getActiveMosqueId());
@@ -152,24 +197,28 @@ function AdminConfigPage() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-              Admin Configuration
+              {routeMosqueId ? "Mosque Settings" : "Admin Configuration"}
             </h1>
             <p className="text-xs sm:text-sm text-gray-600 mt-1">
-              CRUD mosques (name, location id, optional Fajr time + footer text).
+              {routeMosqueId
+                ? "Update your mosque location, Fajr time, and footer text."
+                : "CRUD mosques (name, location id, optional Fajr time + footer text)."}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-900 text-xs sm:text-sm font-semibold hover:bg-gray-50"
-              onClick={() => {
-                logoutAdmin();
-                window.alert("Logged out.");
-                navigate("/");
-              }}
-            >
-              Logout
-            </button>
+            {!routeMosqueId && (
+              <button
+                type="button"
+                className="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-900 text-xs sm:text-sm font-semibold hover:bg-gray-50"
+                onClick={() => {
+                  logoutAdmin();
+                  window.alert("Logged out.");
+                  navigate("/");
+                }}
+              >
+                Logout
+              </button>
+            )}
             <button
               type="button"
               className="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-900 text-xs sm:text-sm font-semibold hover:bg-gray-50"
@@ -177,13 +226,15 @@ function AdminConfigPage() {
             >
               Back to Home
             </button>
-            <button
-              type="button"
-              className="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-900 text-xs sm:text-sm font-semibold hover:bg-gray-50"
-              onClick={() => navigate("/config")}
-            >
-              Old Config
-            </button>
+            {!routeMosqueId && (
+              <button
+                type="button"
+                className="inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-900 text-xs sm:text-sm font-semibold hover:bg-gray-50"
+                onClick={() => navigate("/config")}
+              >
+                Old Config
+              </button>
+            )}
           </div>
         </div>
 
@@ -192,9 +243,9 @@ function AdminConfigPage() {
           <div className="rounded-lg border border-gray-200 p-4 sm:p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base sm:text-lg font-bold text-gray-900">
-                {editingId ? "Edit Mosque" : "Add Mosque"}
+                {routeMosqueId ? "Edit Settings" : editingId ? "Edit Mosque" : "Add Mosque"}
               </h2>
-              {editingId ? (
+              {editingId && !routeMosqueId ? (
                 <button
                   type="button"
                   className="text-xs sm:text-sm font-semibold text-gray-700 hover:text-gray-900"
@@ -224,7 +275,7 @@ function AdminConfigPage() {
                 </label>
                 <input
                   type="text"
-                  className="w-full rounded-md bg-white border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-prayer-green"
+                  className="w-full rounded-md bg-white border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-prayer-green disabled:bg-gray-100 disabled:text-gray-500"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder='e.g. "Džemat Mahala"'
@@ -288,114 +339,128 @@ function AdminConfigPage() {
                   disabled={busy}
                   className="inline-flex items-center px-4 py-2 rounded-md bg-prayer-green text-white text-xs sm:text-sm font-semibold hover:bg-prayer-green/90 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-prayer-green focus:ring-offset-dark-background"
                 >
-                  {busy ? "Saving…" : editingId ? "Save Changes" : "Create Mosque"}
+                  {busy ? "Saving…" : routeMosqueId || editingId ? "Save Changes" : "Create Mosque"}
                 </button>
               </div>
             </form>
           </div>
 
-          {/* List */}
-          <div className="rounded-lg border border-gray-200 p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base sm:text-lg font-bold text-gray-900">
-                Mosques ({loading ? "…" : mosques.length})
-              </h2>
-              <button
-                type="button"
-                className="text-xs sm:text-sm font-semibold text-gray-700 hover:text-gray-900"
-                disabled={loading || busy}
-                onClick={refreshMosques}
-              >
-                {loading ? "Loading…" : "Refresh"}
-              </button>
-            </div>
+          {/* List - hidden if in specific mosque edit mode */}
+          {!routeMosqueId && (
+            <div className="rounded-lg border border-gray-200 p-4 sm:p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base sm:text-lg font-bold text-gray-900">
+                  Mosques ({loading ? "…" : mosques.length})
+                </h2>
+                <button
+                  type="button"
+                  className="text-xs sm:text-sm font-semibold text-gray-700 hover:text-gray-900"
+                  disabled={loading || busy}
+                  onClick={refreshMosques}
+                >
+                  {loading ? "Loading…" : "Refresh"}
+                </button>
+              </div>
 
-            {loading ? (
-              <p className="text-xs sm:text-sm text-gray-600">Loading mosques…</p>
-            ) : mosques.length === 0 ? (
-              <p className="text-xs sm:text-sm text-gray-600">
-                No mosques yet. Create your first one on the left.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {mosques.map((m) => {
-                  const isActive = activeMosqueId && m.id === activeMosqueId;
-                  const locationName = findLocationNameById(m.locationId) || "Unknown";
-                  return (
-                    <div
-                      key={m.id}
-                      className="rounded-md border border-gray-200 p-3"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <div className="font-bold text-gray-900 text-sm sm:text-base truncate">
-                              {m.name}
+              {loading ? (
+                <p className="text-xs sm:text-sm text-gray-600">Loading mosques…</p>
+              ) : mosques.length === 0 ? (
+                <p className="text-xs sm:text-sm text-gray-600">
+                  No mosques yet. Create your first one on the left.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {mosques.map((m) => {
+                    const isActive = activeMosqueId && m.id === activeMosqueId;
+                    const locationName = findLocationNameById(m.locationId) || "Unknown";
+                    return (
+                      <div
+                        key={m.id}
+                        className="rounded-md border border-gray-200 p-3"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <div className="font-bold text-gray-900 text-sm sm:text-base truncate">
+                                {m.name}
+                              </div>
+                              {isActive ? (
+                                <span className="inline-flex items-center rounded-full bg-prayer-green/10 px-2 py-0.5 text-[10px] sm:text-xs font-semibold text-prayer-green">
+                                  Active
+                                </span>
+                              ) : null}
                             </div>
-                            {isActive ? (
-                              <span className="inline-flex items-center rounded-full bg-prayer-green/10 px-2 py-0.5 text-[10px] sm:text-xs font-semibold text-prayer-green">
-                                Active
-                              </span>
-                            ) : null}
+                            <div className="mt-1 text-[10px] sm:text-xs text-gray-600 space-y-0.5">
+                              <div>
+                                <span className="font-semibold">id</span>:{" "}
+                                <span className="font-mono">{m.id}</span>
+                              </div>
+                              <div>
+                                <span className="font-semibold">location</span>:{" "}
+                                {locationName}{" "}
+                                <span className="text-gray-500">(id: {m.locationId})</span>
+                              </div>
+                              <div>
+                                <span className="font-semibold">fajr</span>:{" "}
+                                {m.fajrTime || <span className="text-gray-500">API</span>}
+                              </div>
+                              <div className="whitespace-pre-line">
+                                <span className="font-semibold">footer</span>:{" "}
+                                {m.footerText ? (
+                                  m.footerText
+                                ) : (
+                                  <span className="text-gray-500">Default</span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <div className="mt-1 text-[10px] sm:text-xs text-gray-600 space-y-0.5">
-                            <div>
-                              <span className="font-semibold">id</span>:{" "}
-                              <span className="font-mono">{m.id}</span>
-                            </div>
-                            <div>
-                              <span className="font-semibold">location</span>:{" "}
-                              {locationName}{" "}
-                              <span className="text-gray-500">(id: {m.locationId})</span>
-                            </div>
-                            <div>
-                              <span className="font-semibold">fajr</span>:{" "}
-                              {m.fajrTime || <span className="text-gray-500">API</span>}
-                            </div>
-                            <div className="whitespace-pre-line">
-                              <span className="font-semibold">footer</span>:{" "}
-                              {m.footerText ? (
-                                m.footerText
-                              ) : (
-                                <span className="text-gray-500">Default</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
 
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-shrink-0">
-                          <button
-                            type="button"
-                            className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-prayer-green text-white text-xs font-semibold hover:bg-prayer-green/90"
-                            onClick={() => handleUse(m)}
-                            disabled={busy}
-                          >
-                            Use
-                          </button>
-                          <button
-                            type="button"
-                            className="inline-flex items-center justify-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-900 text-xs font-semibold hover:bg-gray-50"
-                            onClick={() => startEdit(m)}
-                            disabled={busy}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            className="inline-flex items-center justify-center px-3 py-2 rounded-md border border-red-300 bg-white text-red-700 text-xs font-semibold hover:bg-red-50"
-                            onClick={() => handleDelete(m.id)}
-                            disabled={busy}
-                          >
-                            Delete
-                          </button>
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-shrink-0">
+                            <button
+                              type="button"
+                              className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-prayer-green text-white text-xs font-semibold hover:bg-prayer-green/90"
+                              onClick={() => handleUse(m)}
+                              disabled={busy}
+                            >
+                              Use
+                            </button>
+                            <button
+                              type="button"
+                              className="inline-flex items-center justify-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-900 text-xs font-semibold hover:bg-gray-50"
+                              onClick={() => startEdit(m)}
+                              disabled={busy}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              className="inline-flex items-center justify-center px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-900 text-xs font-semibold hover:bg-gray-50"
+                              onClick={() => {
+                                const url = `${window.location.origin}/admin/config/${m.id}`;
+                                navigator.clipboard.writeText(url);
+                                window.alert("Admin link copied!");
+                              }}
+                              disabled={busy}
+                            >
+                              Copy Link
+                            </button>
+                            <button
+                              type="button"
+                              className="inline-flex items-center justify-center px-3 py-2 rounded-md border border-red-300 bg-white text-red-700 text-xs font-semibold hover:bg-red-50"
+                              onClick={() => handleDelete(m.id)}
+                              disabled={busy}
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
