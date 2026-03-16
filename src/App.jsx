@@ -12,9 +12,10 @@ import DateDisplay from "./components/DateDisplay";
 import PrayerTimesList from "./components/PrayerTimesList";
 import Footer from "./components/Footer";
 import { trackAppLoaded, trackVersionUpgrade } from "./utils/analytics";
+import { addBreadcrumb, setMosqueContext } from "./utils/sentryUtils";
 
 // App version - increment this to force reload on all clients
-const APP_VERSION = "2.0.8";
+const APP_VERSION = "2.1.0";
 
 // Send notification to Telegram via Cloudflare Function
 function sendLoadNotification(type, fromVersion = null) {
@@ -103,7 +104,7 @@ function App() {
   expireLocalStorageDaily(tz);
 
   // All hooks must be called before any early returns
-  const { selectedMosque, selectedMosqueId, setSelectedMosque } = useMosque();
+  const { selectedMosque, selectedMosqueId, setSelectedMosque, isLoaded } = useMosque();
   const { config, setConfig } = usePageConfig();
   const { prayerTimes, activePrayerIndex, hijriMonthApi, schedule, hasCustomFajrTime } = usePrayerTimes(
     tz,
@@ -119,12 +120,20 @@ function App() {
   const { clock, gregorianDate, hijriDate, isAfterMaghrib } = useClock(tz, maghribTime);
   const { countdown } = useNextPrayerCountdown(schedule, tz);
 
-  // Redirect to config page if no mosque is selected
+  // Set Sentry context whenever the active mosque changes
   useEffect(() => {
-    if (!selectedMosqueId) {
+    setMosqueContext(selectedMosque);
+  }, [selectedMosque]);
+
+  // Redirect to config page if no mosque is selected.
+  // Wait for isLoaded to prevent a redirect before localStorage has been read
+  // (e.g. after Android process death where the WebView restarts cold).
+  useEffect(() => {
+    if (isLoaded && !selectedMosqueId) {
+      addBreadcrumb("Redirecting to /config — no mosque selected after load", null, "navigation", "warning");
       navigate("/config", { replace: true });
     }
-  }, [selectedMosqueId, navigate]);
+  }, [isLoaded, selectedMosqueId, navigate]);
 
   // TV remote shortcuts (native only):
   // - D-pad Center (Enter/OK) → /config
@@ -179,8 +188,21 @@ function App() {
     };
   }, []);
 
-  // Don't render anything while redirecting to config
-  if (!selectedMosqueId) {
+  // Reload automatically when network comes back online.
+  // This handles the case where WiFi drops (e.g. during Jumu'ah network congestion)
+  // and the WebView is showing a stale/broken state.
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log("[App] Network back online — reloading");
+      addBreadcrumb("Network restored — triggering page reload", null, "network", "info");
+      window.location.reload();
+    };
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, []);
+
+  // Don't render anything while loading or redirecting to config
+  if (!isLoaded || !selectedMosqueId) {
     return null;
   }
 

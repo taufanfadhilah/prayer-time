@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prayer Time - Offline</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #1a1a2e;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .icon {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      opacity: 0.7;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: #c9a84c;
+    }
+
+    p {
+      font-size: 1.1rem;
+      color: #aaa;
+      max-width: 400px;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+
+    .status {
+      font-size: 0.95rem;
+      color: #666;
+      margin-top: 2rem;
+    }
+
+    .status span {
+      color: #c9a84c;
+    }
+
+    .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #e74c3c;
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: pulse 2s infinite;
+    }
+
+    .dot.online { background: #2ecc71; animation: none; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="icon">🕌</div>
+  <h1>Koneksi Terputus</h1>
+  <p>Menunggu koneksi internet kembali untuk menampilkan jadwal sholat...</p>
+
+  <div class="status">
+    <span class="dot" id="dot"></span>
+    <span id="status-text">Offline — mencoba menghubungkan ulang</span>
+  </div>
+
+  <script>
+    var REMOTE_URL = 'https://prayertime-v2.fonti.dev';
+    var checkInterval = null;
+
+    function tryReload() {
+      // Ping the remote URL — if it responds, reload the app
+      fetch(REMOTE_URL + '/', { method: 'HEAD', cache: 'no-store' })
+        .then(function(r) {
+          if (r.ok || r.status < 500) {
+            window.location.href = REMOTE_URL;
+          }
+        })
+        .catch(function() { /* still offline, keep waiting */ });
+    }
+
+    function startChecking() {
+      tryReload();
+      checkInterval = setInterval(tryReload, 10000); // retry every 10s
+    }
+
+    // Native online/offline events
+    window.addEventListener('online', function() {
+      document.getElementById('dot').className = 'dot online';
+      document.getElementById('status-text').textContent = 'Online — memuat ulang...';
+      clearInterval(checkInterval);
+      setTimeout(function() { window.location.href = REMOTE_URL; }, 1500);
+    });
+
+    window.addEventListener('offline', function() {
+      document.getElementById('dot').className = 'dot';
+      document.getElementById('status-text').textContent = 'Offline — mencoba menghubungkan ulang';
+    });
+
+    // Start polling immediately
+    startChecking();
+  </script>
+</body>
+</html>

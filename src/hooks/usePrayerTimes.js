@@ -4,6 +4,7 @@ import { parseHHMM, currentTimeTZ, formatTimeWithoutLeadingZero } from "../utils
 import { loadPageConfig } from "../pageConfig";
 import { expireLocalStorageDaily } from "../utils/storageUtils";
 import { loadMosqueById } from "../mosqueStore";
+import { addBreadcrumb } from "../utils/sentryUtils";
 
 export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMosqueId, setSelectedMosque) {
   const [prayerTimes, setPrayerTimes] = useState([
@@ -35,6 +36,11 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
         return;
       }
 
+      addBreadcrumb(
+        `Prayer times loading started`,
+        { locationId: locId, isMidnightRefresh },
+        "prayer-times"
+      );
       console.log(`[PrayerTimes] Loading prayer times...`, {
         locationId: locId,
         timezone: tz,
@@ -45,6 +51,11 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
       try {
         const data = await getPrayerData(locId, tz, isMidnightRefresh);
 
+        addBreadcrumb(
+          `Prayer times loaded successfully`,
+          { location: data.lokacija, times: data.vakat },
+          "prayer-times"
+        );
         console.log(`[PrayerTimes] API response received:`, {
           location: data.lokacija,
           date: data.datum,
@@ -105,6 +116,12 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
         }
         setActivePrayerIndex(idx);
       } catch (e) {
+        addBreadcrumb(
+          `Prayer times fetch FAILED`,
+          { error: e.message, isMidnightRefresh, hadExistingData: hasPreparedDataRef.current },
+          "prayer-times",
+          "error"
+        );
         console.error(`[PrayerTimes] Failed to load prayer times:`, {
           error: e.message,
           isMidnightRefresh,
@@ -193,6 +210,7 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
     });
 
     return setTimeout(async () => {
+      addBreadcrumb("Midnight refresh triggered", { timestamp: new Date().toISOString() }, "lifecycle");
       console.log(`%c[PrayerTimes] ⏰ MIDNIGHT REFRESH TRIGGERED`, 'background: #222; color: #bada55; font-size: 14px;', {
         timestamp: new Date().toISOString(),
       });
@@ -225,10 +243,12 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
       console.log(`[PrayerTimes] Step 4/4: Fetching fresh prayer times from API...`);
       try {
         await loadPrayerTimes(null, true); // Pass isMidnightRefresh = true
+        addBreadcrumb("Midnight refresh completed successfully", null, "lifecycle");
         console.log(`%c[PrayerTimes] ✅ MIDNIGHT REFRESH COMPLETED SUCCESSFULLY`, 'background: #222; color: #00ff00; font-size: 14px;', {
           timestamp: new Date().toISOString(),
         });
       } catch (e) {
+        addBreadcrumb("Midnight refresh FAILED", { error: e.message }, "lifecycle", "error");
         console.error(`%c[PrayerTimes] ❌ MIDNIGHT REFRESH FAILED`, 'background: #222; color: #ff0000; font-size: 14px;', {
           error: e.message,
           timestamp: new Date().toISOString(),

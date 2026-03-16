@@ -7,6 +7,7 @@ export function useMosque() {
     readSelectedMosqueId()
   );
   const [selectedMosque, setSelectedMosque] = useState(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     // Fetch the selected masjid record from Supabase whenever UUID changes.
@@ -14,6 +15,7 @@ export function useMosque() {
     const run = async () => {
       if (!selectedMosqueId) {
         setSelectedMosque(null);
+        setIsLoaded(true);
         return;
       }
       const res = await loadMosqueById(selectedMosqueId);
@@ -23,6 +25,7 @@ export function useMosque() {
       } else {
         setSelectedMosque(res.mosque || null);
       }
+      setIsLoaded(true);
     };
     run();
     return () => {
@@ -35,6 +38,7 @@ export function useMosque() {
     setSelectedMosqueId,
     selectedMosque,
     setSelectedMosque,
+    isLoaded,
   };
 }
 

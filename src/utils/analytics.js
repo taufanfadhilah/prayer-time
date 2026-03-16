@@ -1,6 +1,6 @@
 import { isNative } from "./platformConfig";
 
-const APP_VERSION = "2.0.5";
+const APP_VERSION = "2.1.0";
 
 function getPlatform() {
   const ua = navigator.userAgent || "";

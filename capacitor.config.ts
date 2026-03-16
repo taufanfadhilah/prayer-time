@@ -15,6 +15,7 @@ const config: CapacitorConfig = {
   },
   server: {
     url: 'https://prayertime-v2.fonti.dev',
+    // TODO: add errorPath: 'offline.html' on next APK rebuild for deeper offline fallback
   },
   plugins: {
     // No additional plugins needed for basic TV display
