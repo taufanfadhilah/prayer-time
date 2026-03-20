@@ -16,7 +16,7 @@ import { trackAppLoaded, trackVersionUpgrade } from "./utils/analytics";
 import { addBreadcrumb, setMosqueContext } from "./utils/sentryUtils";
 
 // App version - increment this to force reload on all clients
-const APP_VERSION = "2.1.0";
+const APP_VERSION = "2.2.0";
 
 // Send notification to Telegram via Cloudflare Function
 function sendLoadNotification(type, fromVersion = null) {
