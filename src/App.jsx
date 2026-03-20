@@ -16,7 +16,7 @@ import { trackAppLoaded, trackVersionUpgrade } from "./utils/analytics";
 import { addBreadcrumb, setMosqueContext } from "./utils/sentryUtils";
 
 // App version - increment this to force reload on all clients
-const APP_VERSION = "2.2.1";
+const APP_VERSION = "2.2.2";
 
 // Send notification to Telegram via Cloudflare Function
 function sendLoadNotification(type, fromVersion = null) {
@@ -214,8 +214,8 @@ function App() {
   // Compute displayHijriDate: Convention A (civil calendar with Maghrib transition)
   // Before Maghrib: show today's civil Hijri date (API date)
   // After Maghrib: advance to next Hijri day (Islamic day starts at Maghrib)
-  // Shows "--" placeholder while API is loading (avoids wrong client-side algorithm values)
-  let displayHijriDate = { day: "--", month: "--", year: "--" };
+  // Falls back to client-side hijriDate if API datum is unavailable for this location
+  let displayHijriDate = hijriDate;
   if (hijriDayApi && hijriMonthApi) {
     if (isAfterMaghrib) {
       // Use toHijri(tomorrow) to detect month/year rollover correctly

@@ -89,12 +89,15 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
         setStatus(data.lokacija ? `Location: ${data.lokacija}` : "");
 
         // Parse full Hijri date from API date string, e.g. "25. džumade-l-uhra 1447"
-        // Only update state when we successfully parse — never reset to 0 on failure,
-        // so a secondary API call with missing/unparseable datum doesn't wipe valid data.
-        if (Array.isArray(data.datum) && data.datum[0]) {
-          const hijriString = data.datum[0];
-          const match = hijriString.match(/^\s*(\d+)\.\s+(.+)\s+(\d+)\s*$/);
-          if (match) {
+        // Try both datum[0] and datum[1] — order varies by location.
+        // Only update state on successful parse; never reset to 0 on failure.
+        if (Array.isArray(data.datum)) {
+          const hijriPattern = /^\s*(\d+)\.\s+(.+)\s+(\d+)\s*$/;
+          const hijriString = data.datum.find(
+            (s) => s && hijriPattern.test(s) && /[a-zA-ZčćžšđČĆŽŠĐ]/.test(s)
+          );
+          if (hijriString) {
+            const match = hijriString.match(hijriPattern);
             setHijriDayApi(parseInt(match[1], 10));
             setHijriMonthApi(match[2].trim());
             setHijriYearApi(parseInt(match[3], 10));
