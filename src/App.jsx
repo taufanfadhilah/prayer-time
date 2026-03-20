@@ -214,8 +214,8 @@ function App() {
   // Compute displayHijriDate: Convention A (civil calendar with Maghrib transition)
   // Before Maghrib: show today's civil Hijri date (API date)
   // After Maghrib: advance to next Hijri day (Islamic day starts at Maghrib)
-  // Falls back to client-side hijriDate while API is loading
-  let displayHijriDate = hijriDate;
+  // Shows "--" placeholder while API is loading (avoids wrong client-side algorithm values)
+  let displayHijriDate = { day: "--", month: "--", year: "--" };
   if (hijriDayApi && hijriMonthApi) {
     if (isAfterMaghrib) {
       // Use toHijri(tomorrow) to detect month/year rollover correctly
