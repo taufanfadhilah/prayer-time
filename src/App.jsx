@@ -11,6 +11,7 @@ import Header from "./components/Header";
 import DateDisplay from "./components/DateDisplay";
 import PrayerTimesList from "./components/PrayerTimesList";
 import Footer from "./components/Footer";
+import { toHijri } from "./utils/dateUtils";
 import { trackAppLoaded, trackVersionUpgrade } from "./utils/analytics";
 import { addBreadcrumb, setMosqueContext } from "./utils/sentryUtils";
 
@@ -106,7 +107,7 @@ function App() {
   // All hooks must be called before any early returns
   const { selectedMosque, selectedMosqueId, setSelectedMosque, isLoaded } = useMosque();
   const { config, setConfig } = usePageConfig();
-  const { prayerTimes, activePrayerIndex, hijriMonthApi, schedule, hasCustomFajrTime } = usePrayerTimes(
+  const { prayerTimes, activePrayerIndex, hijriDayApi, hijriMonthApi, hijriYearApi, schedule, hasCustomFajrTime } = usePrayerTimes(
     tz,
     selectedMosque,
     config,
@@ -210,6 +211,30 @@ function App() {
     ? selectedMosque.name
     : "Medžlis Islamske zajednice - Džemat";
 
+  // Compute displayHijriDate: Convention A (civil calendar with Maghrib transition)
+  // Before Maghrib: show today's civil Hijri date (API date)
+  // After Maghrib: advance to next Hijri day (Islamic day starts at Maghrib)
+  // Falls back to client-side hijriDate while API is loading
+  let displayHijriDate = hijriDate;
+  if (hijriDayApi && hijriMonthApi) {
+    if (isAfterMaghrib) {
+      // Use toHijri(tomorrow) to detect month/year rollover correctly
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowHijri = toHijri(tomorrow);
+      const todayHijri = toHijri(new Date());
+      if (tomorrowHijri.month !== todayHijri.month || tomorrowHijri.year !== todayHijri.year) {
+        // Month/year rolled over — use algorithm's date (Bosnian month names from hijriMonths array)
+        displayHijriDate = tomorrowHijri;
+      } else {
+        // Same month — increment day from reliable API value, keep API month name
+        displayHijriDate = { day: String(hijriDayApi + 1).padStart(2, "0"), month: hijriMonthApi, year: String(hijriYearApi) };
+      }
+    } else {
+      displayHijriDate = { day: String(hijriDayApi).padStart(2, "0"), month: hijriMonthApi, year: String(hijriYearApi) };
+    }
+  }
+
   // Determine footer content: use custom footer if set, otherwise show countdown timer
   const mosqueFooterText = (selectedMosque?.footerText || "").trim();
   const configFooterText = (config.footerText || "").trim();
@@ -231,8 +256,7 @@ function App() {
           <Header masjidHeaderLine={masjidHeaderLine} clock={clock} />
           <DateDisplay
             gregorianDate={gregorianDate}
-            hijriDate={hijriDate}
-            hijriMonthApi={isAfterMaghrib ? hijriMonthApi : null}
+            hijriDate={displayHijriDate}
           />
           <PrayerTimesList
             prayerTimes={prayerTimes}

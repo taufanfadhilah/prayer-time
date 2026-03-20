@@ -20,6 +20,8 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
   const [schedule, setSchedule] = useState(null);
   const [prepared, setPrepared] = useState(null);
   const [hijriMonthApi, setHijriMonthApi] = useState("");
+  const [hijriDayApi, setHijriDayApi] = useState(0);
+  const [hijriYearApi, setHijriYearApi] = useState(0);
   const [hasCustomFajrTime, setHasCustomFajrTime] = useState(false);
 
   // Use ref to track if we have data - allows error handler to check without causing re-renders
@@ -86,17 +88,23 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
         setSchedule(nextSchedule);
         setStatus(data.lokacija ? `Location: ${data.lokacija}` : "");
 
-        // Parse Hijri month from API date string, e.g. "25. džumade-l-uhra 1447"
+        // Parse full Hijri date from API date string, e.g. "25. džumade-l-uhra 1447"
         if (Array.isArray(data.datum) && data.datum[0]) {
           const hijriString = data.datum[0];
-          const match = hijriString.match(/^\s*\d+\.\s+(.+)\s+\d+\s*$/);
-          if (match && match[1]) {
-            setHijriMonthApi(match[1]);
+          const match = hijriString.match(/^\s*(\d+)\.\s+(.+)\s+(\d+)\s*$/);
+          if (match) {
+            setHijriDayApi(parseInt(match[1], 10));
+            setHijriMonthApi(match[2].trim());
+            setHijriYearApi(parseInt(match[3], 10));
           } else {
+            setHijriDayApi(0);
             setHijriMonthApi("");
+            setHijriYearApi(0);
           }
         } else {
+          setHijriDayApi(0);
           setHijriMonthApi("");
+          setHijriYearApi(0);
         }
 
         // Update active prayer index using the freshly computed schedule
@@ -284,7 +292,9 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
     prayerTimes,
     activePrayerIndex,
     status,
+    hijriDayApi,
     hijriMonthApi,
+    hijriYearApi,
     schedule,
     hasCustomFajrTime,
   };

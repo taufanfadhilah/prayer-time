@@ -1,4 +1,4 @@
-export default function DateDisplay({ gregorianDate, hijriDate, hijriMonthApi }) {
+export default function DateDisplay({ gregorianDate, hijriDate }) {
   return (
     <section className="mb-3">
       <div className="flex flex-row gap-2 justify-center">
@@ -58,7 +58,7 @@ export default function DateDisplay({ gregorianDate, hijriDate, hijriMonthApi })
             className="font-bold text-islamic-date -mt-1 leading-none"
             style={{ fontSize: "32px" }}
           >
-            {hijriMonthApi || hijriDate.month}
+            {hijriDate.month}
           </div>
         </div>
       </div>
