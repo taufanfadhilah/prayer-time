@@ -16,7 +16,7 @@ import { trackAppLoaded, trackVersionUpgrade } from "./utils/analytics";
 import { addBreadcrumb, setMosqueContext } from "./utils/sentryUtils";
 
 // App version - increment this to force reload on all clients
-const APP_VERSION = "2.2.2";
+const APP_VERSION = "2.2.3";
 
 // Send notification to Telegram via Cloudflare Function
 function sendLoadNotification(type, fromVersion = null) {
@@ -218,17 +218,21 @@ function App() {
   let displayHijriDate = hijriDate;
   if (hijriDayApi && hijriMonthApi) {
     if (isAfterMaghrib) {
-      // Use toHijri(tomorrow) to detect month/year rollover correctly
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowHijri = toHijri(tomorrow);
-      const todayHijri = toHijri(new Date());
-      if (tomorrowHijri.month !== todayHijri.month || tomorrowHijri.year !== todayHijri.year) {
-        // Month/year rolled over — use algorithm's date (Bosnian month names from hijriMonths array)
-        displayHijriDate = tomorrowHijri;
-      } else {
-        // Same month — increment day from reliable API value, keep API month name
+      if (hijriDayApi <= 28) {
+        // Days 1–28: always within the same month, just increment
         displayHijriDate = { day: String(hijriDayApi + 1).padStart(2, "0"), month: hijriMonthApi, year: String(hijriYearApi) };
+      } else {
+        // Days 29–30: might be the last day of the month — check with algorithm
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowHijri = toHijri(tomorrow);
+        const todayHijri = toHijri(new Date());
+        if (tomorrowHijri.month !== todayHijri.month || tomorrowHijri.year !== todayHijri.year) {
+          // Algorithm detects month rollover — first day of new month
+          displayHijriDate = { day: "01", month: tomorrowHijri.month, year: tomorrowHijri.year };
+        } else {
+          displayHijriDate = { day: String(hijriDayApi + 1).padStart(2, "0"), month: hijriMonthApi, year: String(hijriYearApi) };
+        }
       }
     } else {
       displayHijriDate = { day: String(hijriDayApi).padStart(2, "0"), month: hijriMonthApi, year: String(hijriYearApi) };
