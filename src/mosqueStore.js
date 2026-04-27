@@ -12,7 +12,19 @@ export function normalizeFajrTime(input) {
   if (Number.isNaN(hh) || Number.isNaN(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) {
     return { error: "Fajr time must be a valid 24h time" };
   }
-  // Return without leading zero on hour (e.g., "6:45" instead of "06:45")
+  return `${hh}:${String(mm).padStart(2, "0")}`;
+}
+
+export function normalizeDhuhrTime(input) {
+  const v = String(input ?? "").trim();
+  if (!v) return null;
+  const m = v.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return { error: "Dhuhr time must be H:MM or HH:MM" };
+  const hh = Number(m[1]);
+  const mm = Number(m[2]);
+  if (Number.isNaN(hh) || Number.isNaN(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) {
+    return { error: "Dhuhr time must be a valid 24h time" };
+  }
   return `${hh}:${String(mm).padStart(2, "0")}`;
 }
 
@@ -37,12 +49,16 @@ export function normalizeMosqueDraft(draft) {
   const fajrTime = normalizeFajrTime(draft?.fajrTime);
   if (typeof fajrTime === "object" && fajrTime?.error) return fajrTime;
 
+  const dhuhrTime = normalizeDhuhrTime(draft?.dhuhrTime);
+  if (typeof dhuhrTime === "object" && dhuhrTime?.error) return dhuhrTime;
+
   const footerText = normalizeFooterText(draft?.footerText);
 
   return {
     name,
     locationId,
     fajrTime,
+    dhuhrTime,
     footerText,
   };
 }
@@ -53,6 +69,7 @@ function mapRowToMosque(row) {
     name: row.name,
     locationId: Number(row.location_id),
     fajrTime: row.fajr_time || null,
+    dhuhrTime: row.dhuhr_time || null,
     footerText: row.footer_text || null,
   };
 }
@@ -62,6 +79,7 @@ function mapDraftToRow(draft) {
     name: draft.name,
     location_id: draft.locationId,
     fajr_time: draft.fajrTime,
+    dhuhr_time: draft.dhuhrTime,
     footer_text: draft.footerText,
   };
 }
@@ -74,7 +92,7 @@ export async function loadMosques() {
   if (!supabase) return { error: supabaseNotReadyError() };
   const { data, error } = await supabase
     .from("mosques")
-    .select("id,name,location_id,fajr_time,footer_text,created_at")
+    .select("id,name,location_id,fajr_time,dhuhr_time,footer_text,created_at")
     .order("created_at", { ascending: false });
 
   if (error) return { error: error.message || "Failed to load mosques" };
@@ -85,7 +103,7 @@ export async function loadMosqueById(id) {
   if (!supabase) return { error: supabaseNotReadyError() };
   const { data, error } = await supabase
     .from("mosques")
-    .select("id,name,location_id,fajr_time,footer_text,created_at")
+    .select("id,name,location_id,fajr_time,dhuhr_time,footer_text,created_at")
     .eq("id", id)
     .single();
 

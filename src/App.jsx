@@ -107,7 +107,7 @@ function App() {
   // All hooks must be called before any early returns
   const { selectedMosque, selectedMosqueId, setSelectedMosque, isLoaded } = useMosque();
   const { config, setConfig } = usePageConfig();
-  const { prayerTimes, activePrayerIndex, hijriDayApi, hijriMonthApi, hijriYearApi, schedule, hasCustomFajrTime } = usePrayerTimes(
+  const { prayerTimes, activePrayerIndex, hijriDayApi, hijriMonthApi, hijriYearApi, schedule, hasCustomFajrTime, hasCustomDhuhrTime } = usePrayerTimes(
     tz,
     selectedMosque,
     config,
@@ -266,6 +266,7 @@ function App() {
             prayerTimes={prayerTimes}
             activePrayerIndex={activePrayerIndex}
             hasCustomFajrTime={hasCustomFajrTime}
+            hasCustomDhuhrTime={hasCustomDhuhrTime}
             isFriday={new Date().getDay() === 5}
           />
           <Footer footerText={effectiveFooterText} countdown={countdown} />
