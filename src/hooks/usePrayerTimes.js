@@ -23,6 +23,7 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
   const [hijriDayApi, setHijriDayApi] = useState(0);
   const [hijriYearApi, setHijriYearApi] = useState(0);
   const [hasCustomFajrTime, setHasCustomFajrTime] = useState(false);
+  const [hasCustomDhuhrTime, setHasCustomDhuhrTime] = useState(false);
 
   // Use ref to track if we have data - allows error handler to check without causing re-renders
   const hasPreparedDataRef = useRef(false);
@@ -71,13 +72,29 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
             ? mosque.fajrTime.trim()
             : null;
 
-        // If mosque has custom fajrTime, override the API value
+        // If mosque has custom fajrTime, override the API value (index 0)
         if (mosqueFajrTime && nextPrepared && nextPrepared.length > 0) {
           nextPrepared = [mosqueFajrTime, ...nextPrepared.slice(1)];
           setHasCustomFajrTime(true);
         } else {
-          // Use API time directly (no caching)
           setHasCustomFajrTime(false);
+        }
+
+        // If mosque has custom dhuhrTime, override the API value (index 2)
+        const mosqueDhuhrTime =
+          (mosque?.dhuhrTime || "").trim().length > 0
+            ? mosque.dhuhrTime.trim()
+            : null;
+
+        if (mosqueDhuhrTime && nextPrepared && nextPrepared.length > 2) {
+          nextPrepared = [
+            ...nextPrepared.slice(0, 2),
+            mosqueDhuhrTime,
+            ...nextPrepared.slice(3),
+          ];
+          setHasCustomDhuhrTime(true);
+        } else {
+          setHasCustomDhuhrTime(false);
         }
 
         const nextSchedule = nextPrepared.map((t) => parseHHMM(t, tz));
@@ -294,6 +311,7 @@ export function usePrayerTimes(tz, selectedMosque, config, setConfig, selectedMo
     hijriYearApi,
     schedule,
     hasCustomFajrTime,
+    hasCustomDhuhrTime,
   };
 }
 

@@ -27,6 +27,7 @@ function AdminConfigPage() {
   const [name, setName] = useState("");
   const [locationId, setLocationId] = useState(14); // default matches App.jsx default
   const [fajrTime, setFajrTime] = useState("");
+  const [dhuhrTime, setDhuhrTime] = useState("");
   const [footerText, setFooterText] = useState("");
 
   const [error, setError] = useState("");
@@ -117,6 +118,7 @@ function AdminConfigPage() {
     setName("");
     setLocationId(14);
     setFajrTime("");
+    setDhuhrTime("");
     setFooterText("");
     setError("");
   };
@@ -126,6 +128,7 @@ function AdminConfigPage() {
     setName(m.name || "");
     setLocationId(m.locationId || 14);
     setFajrTime(m.fajrTime || "");
+    setDhuhrTime(m.dhuhrTime || "");
     setFooterText(m.footerText || "");
     setError("");
   };
@@ -136,6 +139,7 @@ function AdminConfigPage() {
       name,
       locationId,
       fajrTime,
+      dhuhrTime,
       footerText,
     };
 
@@ -201,8 +205,8 @@ function AdminConfigPage() {
             </h1>
             <p className="text-xs sm:text-sm text-gray-600 mt-1">
               {routeMosqueId
-                ? "Update your mosque location, Fajr time, and footer text."
-                : "CRUD mosques (name, location id, optional Fajr time + footer text)."}
+                ? "Update your mosque location, Fajr/Dhuhr time, and footer text."
+                : "CRUD mosques (name, location id, optional Fajr/Dhuhr time + footer text)."}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -320,6 +324,22 @@ function AdminConfigPage() {
 
               <div className="flex flex-col">
                 <label className="block text-xs sm:text-sm mb-1 text-gray-700">
+                  Dhuhr Time (optional, H:MM)
+                </label>
+                <input
+                  type="text"
+                  className="w-full rounded-md bg-white border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-prayer-green"
+                  value={dhuhrTime}
+                  onChange={(e) => setDhuhrTime(e.target.value)}
+                  placeholder="e.g. 13:00"
+                />
+                <p className="mt-1 text-[10px] sm:text-xs text-gray-500">
+                  Leave empty to use the time from the daily API response.
+                </p>
+              </div>
+
+              <div className="flex flex-col">
+                <label className="block text-xs sm:text-sm mb-1 text-gray-700">
                   Footer Text (optional)
                 </label>
                 <textarea
@@ -403,6 +423,10 @@ function AdminConfigPage() {
                               <div>
                                 <span className="font-semibold">fajr</span>:{" "}
                                 {m.fajrTime || <span className="text-gray-500">API</span>}
+                              </div>
+                              <div>
+                                <span className="font-semibold">dhuhr</span>:{" "}
+                                {m.dhuhrTime || <span className="text-gray-500">API</span>}
                               </div>
                               <div className="whitespace-pre-line">
                                 <span className="font-semibold">footer</span>:{" "}

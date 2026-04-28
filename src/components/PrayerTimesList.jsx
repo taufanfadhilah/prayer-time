@@ -1,7 +1,7 @@
 import { labels } from "../utils/constants";
 import { fontSize, spacing } from "../utils/platformConfig";
 
-export default function PrayerTimesList({ prayerTimes, activePrayerIndex, hasCustomFajrTime, isFriday }) {
+export default function PrayerTimesList({ prayerTimes, activePrayerIndex, hasCustomFajrTime, hasCustomDhuhrTime, isFriday }) {
   return (
     <section className="mb-3 flex-1 min-h-0 flex flex-col">
       <div className="rounded-lg overflow-hidden flex flex-col flex-1 min-h-0">
@@ -34,11 +34,13 @@ export default function PrayerTimesList({ prayerTimes, activePrayerIndex, hasCus
                     >
                       {i === 0
                         ? hasCustomFajrTime
-                          ? "Namaz u džamiji"
+                          ? "Sabah u džamiji"
                           : "Zora"
                         : i === 2 && isFriday
                           ? "Džuma"
-                          : labels.bs[i]}
+                          : i === 2 && hasCustomDhuhrTime
+                            ? "Podne u džamiji"
+                            : labels.bs[i]}
                     </div>
                   </div>
                   <div className="flex-1 text-center px-2">
