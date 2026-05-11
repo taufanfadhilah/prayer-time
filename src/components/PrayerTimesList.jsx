@@ -39,7 +39,7 @@ export default function PrayerTimesList({ prayerTimes, activePrayerIndex, hasCus
                         : i === 2 && isFriday
                           ? "Džuma"
                           : i === 2 && hasCustomDhuhrTime
-                            ? "Podne u džamiji"
+                            ? "Podne"
                             : labels.bs[i]}
                     </div>
                   </div>
