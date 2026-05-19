@@ -7,9 +7,18 @@ const labels = {
 };
 
 const hijriMonths = [
-  "muharram", "safar", "rabiʿ al-awwal", "rabiʿ al-thani", 
-  "jumada al-awwal", "jumada al-thani", "redžeb", "šaʿban",
-  "ramadan", "šavval", "dhu al-qadah", "dhu al-hijjah"
+  "muharrem",
+  "safer",
+  "rebiul-evvel",
+  "rebiul-ahir",
+  "džumadel-ula",
+  "džumadel-uhra",
+  "redžeb",
+  "ša'ban",
+  "ramazan",
+  "ševval",
+  "zul-ka'de",
+  "zul-hidždže"
 ];
 
 const MOSQUES = [

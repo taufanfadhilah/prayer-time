@@ -20,17 +20,17 @@ export const labels = {
 };
 
 export const hijriMonths = [
-  "muharram",
-  "safar",
-  "rabiʿ al-awwal",
-  "rabiʿ al-thani",
-  "jumada al-awwal",
-  "jumada al-thani",
+  "muharrem",
+  "safer",
+  "rebiul-evvel",
+  "rebiul-ahir",
+  "džumadel-ula",
+  "džumadel-uhra",
   "redžeb",
-  "šaʿban",
-  "ramadan",
-  "šavval",
-  "dhu al-qadah",
-  "dhu al-hijjah",
+  "ša'ban",
+  "ramazan",
+  "ševval",
+  "zul-ka'de",
+  "zul-hidždže"
 ];
 
