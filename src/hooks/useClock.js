@@ -28,26 +28,17 @@ export function useClock(tz, maghribTime) {
     const gregorian = toGregorianDate(now, tz);
     setGregorianDate(gregorian);
 
-    // Hijri date should persist until next Maghrib (not change at midnight).
-    // Before Maghrib: subtract 1 day so midnight rollover doesn't advance Hijri.
-    // After Maghrib: use today's date (normal) — the new Hijri day has begun.
     let hijriInput = now;
     let afterMaghrib = false;
 
     if (maghribTimeRef.current) {
-      // Check same Gregorian day to detect stale schedule after midnight
       const sameDay =
         now.getDate() === maghribTimeRef.current.getDate() &&
         now.getMonth() === maghribTimeRef.current.getMonth() &&
         now.getFullYear() === maghribTimeRef.current.getFullYear();
 
       if (sameDay && now >= maghribTimeRef.current) {
-        // After Maghrib: use today's date (normal, new Hijri day)
         afterMaghrib = true;
-      } else {
-        // Before Maghrib (or stale schedule after midnight): subtract 1 day
-        hijriInput = new Date(now);
-        hijriInput.setDate(hijriInput.getDate() - 1);
       }
     }
 
