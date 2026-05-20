@@ -50,7 +50,7 @@ export default function PrayerTimesList({ prayerTimes, activePrayerIndex, hasCus
                       }`}
                       style={{ fontSize: fontSize.prayerTime }}
                     >
-                      {time}
+                      {time ? time.replace(/^(\d):/, '0$1:') : time}
                     </div>
                   </div>
                   <div className="flex-1 text-right pl-3">
