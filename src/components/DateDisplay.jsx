@@ -12,7 +12,7 @@ export default function DateDisplay({ gregorianDate, hijriDate }) {
               {gregorianDate.day}
             </span>
             <span
-              className="font-bold text-prayer-green"
+              className="font-bold text-prayer-green mr-3"
               style={{ fontSize: "30px" }}
             >
               .
@@ -42,7 +42,7 @@ export default function DateDisplay({ gregorianDate, hijriDate }) {
               {hijriDate.day}
             </span>
             <span
-              className="font-bold text-islamic-date"
+              className="font-bold text-islamic-date mr-3"
               style={{ fontSize: "30px" }}
             >
               .
