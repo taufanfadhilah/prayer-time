@@ -13,6 +13,7 @@ import {
   setActiveMosqueId,
   updateMosque,
 } from "./mosqueStore";
+import { loadGlobalConfig, saveGlobalConfig } from "./globalConfigStore";
 
 function AdminConfigPage() {
   const navigate = useNavigate();
@@ -31,6 +32,11 @@ function AdminConfigPage() {
   const [footerText, setFooterText] = useState("");
 
   const [error, setError] = useState("");
+
+  const [hijriOffset, setHijriOffset] = useState(0);
+  const [globalBusy, setGlobalBusy] = useState(false);
+  const [globalError, setGlobalError] = useState("");
+  const [globalSuccess, setGlobalSuccess] = useState(false);
 
   useEffect(() => {
     const html = document.documentElement;
@@ -67,14 +73,15 @@ function AdminConfigPage() {
         }
       } else {
         // Global admin mode
-        const res = await loadMosques();
+        const [mosquesRes, configRes] = await Promise.all([loadMosques(), loadGlobalConfig()]);
         if (cancelled) return;
-        if (res?.error) {
-          setError(res.error);
+        if (mosquesRes?.error) {
+          setError(mosquesRes.error);
           setMosques([]);
         } else {
-          setMosques(res.mosques || []);
+          setMosques(mosquesRes.mosques || []);
         }
+        setHijriOffset(configRes.hijriDayOffset ?? 0);
       }
       setLoading(false);
     };
@@ -170,6 +177,20 @@ function AdminConfigPage() {
     setBusy(false);
   };
 
+  const handleSaveGlobalConfig = async () => {
+    setGlobalError("");
+    setGlobalSuccess(false);
+    setGlobalBusy(true);
+    const res = await saveGlobalConfig({ hijriDayOffset: hijriOffset });
+    setGlobalBusy(false);
+    if (res?.error) {
+      setGlobalError(res.error);
+    } else {
+      setGlobalSuccess(true);
+      setTimeout(() => setGlobalSuccess(false), 3000);
+    }
+  };
+
   const handleUse = (m) => {
     try {
       localStorage.setItem("locId", String(m.locationId));
@@ -241,6 +262,49 @@ function AdminConfigPage() {
             )}
           </div>
         </div>
+
+        {/* Global Settings — only visible in global admin mode */}
+        {!routeMosqueId && (
+          <div className="mb-6 rounded-lg border border-gray-200 p-4 sm:p-5">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-4">Global Settings</h2>
+
+            {globalError ? (
+              <div className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs sm:text-sm text-red-700">
+                {globalError}
+              </div>
+            ) : null}
+            {globalSuccess ? (
+              <div className="mb-3 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-xs sm:text-sm text-green-700">
+                Global config saved.
+              </div>
+            ) : null}
+
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+              <div className="flex flex-col">
+                <label className="block text-xs sm:text-sm mb-1 text-gray-700">
+                  Hijri Day Offset
+                </label>
+                <input
+                  type="number"
+                  className="w-32 rounded-md bg-white border border-gray-300 px-3 py-2 text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-prayer-green"
+                  value={hijriOffset}
+                  onChange={(e) => setHijriOffset(Number(e.target.value))}
+                />
+                <p className="mt-1 text-[10px] sm:text-xs text-gray-500">
+                  Positive = advance days, negative = go back. 0 = no adjustment. Applies to all mosques.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={globalBusy}
+                className="inline-flex items-center px-4 py-2 rounded-md bg-prayer-green text-white text-xs sm:text-sm font-semibold hover:bg-prayer-green/90 disabled:opacity-60 disabled:cursor-not-allowed"
+                onClick={handleSaveGlobalConfig}
+              >
+                {globalBusy ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Form */}

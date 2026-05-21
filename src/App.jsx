@@ -7,6 +7,7 @@ import { useMosque } from "./hooks/useMosque";
 import { usePageConfig } from "./hooks/usePageConfig";
 import { usePrayerTimes } from "./hooks/usePrayerTimes";
 import { useNextPrayerCountdown } from "./hooks/useNextPrayerCountdown";
+import { useGlobalConfig } from "./hooks/useGlobalConfig";
 import Header from "./components/Header";
 import DateDisplay from "./components/DateDisplay";
 import PrayerTimesList from "./components/PrayerTimesList";
@@ -120,6 +121,7 @@ function App() {
   const maghribTime = schedule?.[4] ?? null;
   const { clock, gregorianDate, hijriDate, isAfterMaghrib } = useClock(tz, maghribTime);
   const { countdown } = useNextPrayerCountdown(schedule, tz);
+  const { hijriDayOffset } = useGlobalConfig();
 
   // Set Sentry context whenever the active mosque changes
   useEffect(() => {
@@ -237,6 +239,13 @@ function App() {
     } else {
       displayHijriDate = { day: String(hijriDayApi).padStart(2, "0"), month: hijriMonthApi, year: String(hijriYearApi) };
     }
+  }
+
+  // Apply global Hijri day offset (set by admin in global config)
+  if (hijriDayOffset !== 0) {
+    const base = new Date();
+    base.setDate(base.getDate() + (isAfterMaghrib ? 1 : 0) + hijriDayOffset);
+    displayHijriDate = toHijri(base);
   }
 
   // Determine footer content: use custom footer if set, otherwise show countdown timer
