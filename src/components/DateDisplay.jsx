@@ -26,7 +26,7 @@ export default function DateDisplay({ gregorianDate, hijriDate }) {
           </div>
           <div
             className="font-bold text-prayer-green -mt-1 leading-none"
-            style={{ fontSize: "32px" }}
+            style={{ fontSize: "27px" }}
           >
             {gregorianDate.month}
           </div>
@@ -56,7 +56,7 @@ export default function DateDisplay({ gregorianDate, hijriDate }) {
           </div>
           <div
             className="font-bold text-islamic-date -mt-1 leading-none"
-            style={{ fontSize: "32px" }}
+            style={{ fontSize: "27px" }}
           >
             {hijriDate.month}
           </div>
