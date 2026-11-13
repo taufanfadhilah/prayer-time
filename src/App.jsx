@@ -9,6 +9,7 @@ import { usePrayerTimes } from "./hooks/usePrayerTimes";
 import { useNextPrayerCountdown } from "./hooks/useNextPrayerCountdown";
 import { useGlobalConfig } from "./hooks/useGlobalConfig";
 import Header from "./components/Header";
+import { DISPLAY_ORIENTATION_KEY } from "./utils/constants";
 import DateDisplay from "./components/DateDisplay";
 import PrayerTimesList from "./components/PrayerTimesList";
 import Footer from "./components/Footer";
@@ -261,8 +262,10 @@ function App() {
     ? (mosqueFooterText || configFooterText)
     : null; // null means show countdown timer
 
+  let landscape = false;
+  try { landscape = localStorage.getItem(DISPLAY_ORIENTATION_KEY) === "landscape"; } catch { /* Default to portrait. */ }
   return (
-    <div className="tv-portrait-wrapper bg-dark-background">
+    <div className={landscape ? "tv-landscape-wrapper" : "tv-portrait-wrapper bg-dark-background"}>
       <div className="w-full h-full flex">
         {/* Main Card Container */}
         <div className="prayer-card-container w-full h-full">
@@ -276,6 +279,7 @@ function App() {
             activePrayerIndex={activePrayerIndex}
             hasCustomFajrTime={hasCustomFajrTime}
             hasCustomDhuhrTime={hasCustomDhuhrTime}
+            landscape={landscape}
             isFriday={new Date().getDay() === 5}
           />
           <Footer footerText={effectiveFooterText} countdown={countdown} />
