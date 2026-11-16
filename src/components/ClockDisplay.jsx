@@ -1,9 +1,8 @@
 export default function ClockDisplay({ clock }) {
   return (
-    <div className="rounded-lg border border-light-border p-2 mx-auto w-[420px]">
+    <div className="p-2 mx-auto w-full">
       <div
-        className="font-bold tracking-tight text-dark-text text-center tabular-nums"
-        style={{ fontSize: "72px" }}
+        className="clock-display font-bold tracking-tight text-prayer-green text-center tabular-nums"
       >
         {clock}
       </div>

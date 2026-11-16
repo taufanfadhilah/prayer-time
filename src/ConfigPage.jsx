@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loadMosqueById, loadMosques } from "./mosqueStore";
 import { trackMosqueSelected, trackMosqueCleared } from "./utils/analytics";
+import { DISPLAY_ORIENTATION_KEY } from "./utils/constants";
 
 const LOCAL_STORAGE_DAY_KEY = "localStorageDay";
 const SELECTED_MOSQUE_ID_KEY = "selectedMosqueId";
@@ -22,7 +23,7 @@ function expireLocalStorageDaily(tz) {
     const last = localStorage.getItem(LOCAL_STORAGE_DAY_KEY);
     if (last === todayKey) return;
 
-    const keep = new Set([LOCAL_STORAGE_DAY_KEY, SELECTED_MOSQUE_ID_KEY]);
+    const keep = new Set([LOCAL_STORAGE_DAY_KEY, SELECTED_MOSQUE_ID_KEY, DISPLAY_ORIENTATION_KEY]);
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
@@ -79,6 +80,9 @@ function ConfigPage() {
 
   const [currentMosque, setCurrentMosque] = useState(null);
   const [selectedId, setSelectedId] = useState(() => readSelectedMosqueId());
+  const [orientation, setOrientation] = useState(() => {
+    try { return localStorage.getItem(DISPLAY_ORIENTATION_KEY) === "landscape" ? "landscape" : "portrait"; } catch { return "portrait"; }
+  });
 
   const sortedMosques = useMemo(() => {
     return mosques.slice().sort((a, b) => a.name.localeCompare(b.name));
@@ -130,6 +134,7 @@ function ConfigPage() {
     setError("");
     setBusy(true);
     writeSelectedMosqueId(selectedId);
+    try { localStorage.setItem(DISPLAY_ORIENTATION_KEY, orientation); } catch { /* Storage may be unavailable. */ }
     clearCachesForImmediateRefresh();
     const mosque = mosques.find((m) => m.id === selectedId);
     trackMosqueSelected(mosque?.name || selectedId);
@@ -157,7 +162,7 @@ function ConfigPage() {
           Device Configuration
         </h1>
         <p className="text-xs sm:text-sm text-gray-600 mb-6 text-center">
-          Choose the masjid for this device. Only the masjid UUID is kept in{" "}
+          Choose the masjid and display orientation for this device. These settings are kept in{" "}
           <span className="font-mono">localStorage</span>; other cached data refreshes daily.
         </p>
 
@@ -174,6 +179,11 @@ function ConfigPage() {
             handleSave();
           }}
         >
+          <fieldset className="flex items-center gap-6 text-gray-900 text-sm">
+            <legend className="mb-1 text-gray-700">Display orientation</legend>
+            <label className="flex items-center gap-2"><input type="radio" name="orientation" value="portrait" checked={orientation === "portrait"} onChange={() => setOrientation("portrait")} /> Portrait</label>
+            <label className="flex items-center gap-2"><input type="radio" name="orientation" value="landscape" checked={orientation === "landscape"} onChange={() => setOrientation("landscape")} /> Landscape</label>
+          </fieldset>
           <div className="flex flex-col">
             <label className="block text-xs sm:text-sm mb-1 text-gray-700">
               Masjid
